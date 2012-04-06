@@ -21,7 +21,6 @@ def http_request(url, server, port = 80, data = None):
 
     # TODO: Timeouts!
     conn = HTTPConnection(server, port)
-    print(headers, body)
     conn.request(method, url, body, headers)
     resp = conn.getresponse()
     data = resp.read()

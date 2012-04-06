@@ -61,6 +61,7 @@ class ProxiedRequester:
                 continue
 
             try:
+                print('Requesting %s...' % url, )
                 t1 = time()
                 (status,data) = http_request(url, server, port, body)
                 t2 = time()
@@ -74,6 +75,7 @@ class ProxiedRequester:
                 status = 999 # Some weird exception
                 
             self.proxies[self.curr_proxy_id] = (server, port, avgt, reqn, status, lastban)
+            print(status)
             if status == 200:
                 return (status,data)
             

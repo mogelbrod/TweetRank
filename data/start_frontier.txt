@@ -1,22 +1,21 @@
-ThePSF
-SciPyTip
-pythoncoders
-planetpython
-pyjobs
-PythonInsider
-pypi
-Lethain
-holdenweb
-gvanrossum
-raymondh
-bryanveloso
-1990sPythonUser
-pdxpython
-pycon
-newrelic
-adrianholovaty
-garybernhardt
-dabeaz
-jezdez
-djangoproject
-PyLadies
+63873759	0
+254791849	0
+6040792		0
+73946259	0
+29342322	0
+268974804	0
+24514487	0
+2330381		0
+2633711		0
+15804774	0
+14159138	0
+615403		0
+277576227	0
+15293193	0
+9475182		0
+15527007	0
+1392281		0
+809685		0
+20958216	0
+641003		0
+191225303	0

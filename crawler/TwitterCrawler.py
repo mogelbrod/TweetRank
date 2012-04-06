@@ -2,60 +2,35 @@
 # -*- coding: utf-8 -*-
 
 import os, json
-from OsUtils import safemkdir
 from ProxiedRequester import ProxiedRequester
+from TweetsWarehouse import TweetsWarehouse
+from UsersWarehouse import UsersWarehouse
+from UsersFrontier import UsersFrontier
+from TweetUtils import get_related_users
 
 class TwitterCrawler:            
     def __init__(self, datadir):
-        self.datadir   = datadir
-        self.tweetsdir = datadir + '/tweets/'
-        self.usersdir  = datadir + '/users/'
-
-        self.frontier  = set()
-        self.tweets    = set()
-        self.users     = set()
-
-        safemkdir(self.tweetsdir)
-        safemkdir(self.usersdir)
-
-        self.load_data(datadir)
-        self.load_frontier()
+        self.frontier = UsersFrontier(datadir)
+        self.tweets = TweetsWarehouse(datadir + '/tweets/')
+        self.users  = UsersWarehouse(datadir + '/users/')
 
         self.requester = ProxiedRequester()
-        self.requester.load_proxies(datadir + '/proxies2.txt')
+        self.requester.load_proxies(datadir + '/proxies.txt')
 
-    def load_data(self, datadir):
-        try:
-            for f in os.listdir(datadir + '/tweets/'):
-                self.tweets.add(f)
-            for f in os.listdir(datadir + '/users/'):
-                self.users.add(f)
-            return True
-        except Exception as e:
-            print(e)
-            return False
 
-    def load_frontier(self):
-        try:
-            ff = open(self.datadir + '/frontier.txt')
-            for f in ff:
-                self.frontier.add(f[:-1])
-        except Exception as e:
-            print(e)
-
-    def get_twitter_multipage_query(self, query):
+    def get_twitter_multipage_query(self, query, count = 100):
         page = 1
         result = []
         while True:
-            (status, jsondata) = self.requester.request("%s&page=%d" % (query, page))
+            (status, jsondata) = self.requester.request("%s&count=%d&page=%d" % (query, count, page))
             if status == 999:
                 # No proxies available!
-                return result
+                return result # Output the current result
 
             if status == 200:
                 data = json.loads(jsondata.decode('utf-8'))
                 result.extend(data)
-                if len(data) < 100: return result
+                if len(data) < count: return result
                 else: page = page + 1
 
     def get_twitter_singlepage_query(self, query):
@@ -71,23 +46,44 @@ class TwitterCrawler:
             return json.loads(jsondata.decode('utf-8'))
         else:
             return []
+		
+    def get_user_tweets(self, user_id, since_id = None):
+        query = 'http://api.twitter.com/1/statuses/user_timeline.json?id=%d&exclude_replies=false&include_rts=true&include_entities=true' % user_id
+        if since_id != None:
+            query = query + ('&since_id=%d' % since_id)
+        return self.get_twitter_multipage_query(query, 200)
 
-    def get_retweets_by_user(self,user):
-        query = 'http://api.twitter.com/1/statuses/retweeted_by_user.json?id=%s&count=100' % user
-        return self.get_twitter_multipage_query(query)
+    def get_user_retweets(self, user_id, since_id = None):
+        query = 'http://api.twitter.com/1/statuses/retweeted_by_user.json?id=%d&include_entities=true' % user_id
+        if since_id != None:
+            query = query + ('&since_id=%d' % since_id)
+        return self.get_twitter_multipage_query(query, 100)
 
-    def get_user_status_by_id(self, users):
-        # TODO: POST requests are not working correctly
-        query = 'http://api.twitter.com/1/users/lookup.json'
-        return self.post_twitter_singlepage_query(query, {'screen_name': users})
-
-
-    def crawl(self):
+    def crawl(self, maxdepth = 3, maxusers = 400):
         # TODO
-        for user in self.frontier:
-            pass
+        #tweets_by_user = {}
+        while len(self.frontier) > 0 and len(self.users) < maxusers:
+            user,depth = self.frontier.pop()
+            if user in self.users: continue
+            tweets_by_user = self.get_user_tweets(user)
+            """
+            print (user)
+            for tid in self.tweets:
+                tw_user = tweets_by_user.get(self.tweets[tid]['user']['id'], [])
+                tw_user.append(tid)
+                tweets_by_user[self.tweets[tid]['user']['id']] = tw_user
+            """    
+            for tweet in tweets_by_user:
+                self.tweets.add(tweet)
+                if depth < maxdepth:
+                    related_users = get_related_users(tweet)
+                    for ru in related_users:
+                        self.frontier.push(ru, depth+1)
 
+            self.users.add(user, 0) # dummy, this will be used later
+        print ("Crawled users: %d" % len(self.users))
+        print ("Crawled tweets: %d" % len(self.tweets))
+            
 
 tc = TwitterCrawler('../data/')
-#tc.crawl()
-print (tc.get_user_status_by_id(['joapuipe','twitter']))
+tc.crawl()
