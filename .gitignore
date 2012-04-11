@@ -1,3 +1,9 @@
-data/tweets
-data/users
-data/frontier.txt
+data/*
+!data/start_frontier.txt
+!data/proxies.txt
+!data/README.md
+
+doc/tweetrank_draft/*
+doc/tweetrank_draft/tweetrank_draft.tex
+
+crawler/__pycache__
