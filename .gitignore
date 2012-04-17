@@ -7,3 +7,24 @@ doc/tweetrank_draft/*
 doc/tweetrank_draft/tweetrank_draft.tex
 
 crawler/__pycache__
+
+.DS_Store*
+ehthumbs.db
+Icon?
+Thumbs.db
+*.pyc
+*.pyo
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
