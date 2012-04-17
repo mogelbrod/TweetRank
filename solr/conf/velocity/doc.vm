@@ -1,42 +1,28 @@
-<div class="result-title"><b>#field('name')</b><span class="mlt">#if($params.getBool('mlt', false) == false)<a href="#lensNoQ&q=id:$docId&mlt=true">More Like This</a>#end</span></div>
-##do we have a physical store for this product
-#set($store = $doc.getFieldValue('store'))
-#if($store)<div class="map"><img src="http://maps.google.com/maps/api/staticmap?&zoom=12&size=150x80&maptype=roadmap&markers=$doc.getFieldValue('store')&sensor=false" /><div><small><a target="_map" href="http://maps.google.com/?q=$store&amp;source=embed">Larger Map</a></small></div></div>#end
-<div>Price: $!number.currency($doc.getFieldValue('price'))</div>
-<div>Features: #field('features')</div>
-<div>In Stock: #field('inStock')</div>
-<div class="mlt">
-  #set($mlt = $mltResults.get($docId))
-  #set($mltOn = $params.getBool('mlt'))
-  #if($mltOn == true)<div class="field-name">Similar Items</div>#end
-  #if ($mltOn && $mlt && $mlt.size() > 0)
-  <ul>
-    #foreach($mltHit in $mlt)
-      #set($mltId = $mltHit.getFieldValue('id'))
-      <li><div><a href="#url_for_home?q=id:$mltId">$mltId</a></div><div><span class="field-name">Name:</span> $mltHit.getFieldValue('name')</div>
-        <div><span class="field-name">Price:</span> $!number.currency($mltHit.getFieldValue('price')) <span class="field-name">In Stock:</span> $mltHit.getFieldValue('inStock')</div>
+<div class="hit">
+	<div class="meta">
+		<a class="name" href="http://twitter.com/#field('user_name')">#field('user_nick')</a>
+		<span class="time">#field('created_at')</span>
+		<span class="hashtags">#field('hashtag')</span>
+		<span class="score">#field('score')</span>
+		<span class="rank">#field('rank')</span>
+	</div>
+	<p class="text">#field('text')</p>
 
-      </li>
-    #end
-  </ul>
-  #elseif($mltOn && $mlt.size() == 0)
-    <div>No Similar Items Found</div>
-  #end
-</div>
 #if($params.getBool("debugQuery",false))
-  <a href="#" onclick='jQuery(this).siblings("pre").toggle(); return false;'>toggle explain</a>
-  <pre style="display:none">$response.getExplainMap().get($doc.getFirstValue('id'))</pre>
-  <a href="#" onclick='jQuery(this).siblings("pre2").toggle(); return false;'>toggle all fields</a>
-  <pre2 style="display:none">
-  #foreach($fieldname in $doc.fieldNames)
-     <br>
-       <span class="field-name">$fieldname :</span>
-       <span>
-       #foreach($value in $doc.getFieldValues($fieldname))
-         $value
-       #end
-       </span>
-  #end
-   </br>
-  </pre2>
+	<div class="debug">
+		<a href="#" onclick="jQuery(this).next('pre').toggle(); return false;">Explain</a>
+		<pre style="display:none">$response.getExplainMap().get($doc.getFirstValue('id'))</pre>
+		<a href="#" onclick="jQuery(this).next('ul').toggle(); return false;">Fields</a>
+		<ul style="display:none">
+			#foreach($fieldname in $doc.fieldNames)
+				<li class="field"><span class="name">$fieldname:</span> <span class="value">
+				#foreach($value in $doc.getFieldValues($fieldname))
+					$value
+				#end
+				</span></li>
+			#end
+		</ul>
+	</div>
 #end
+
+</div>
