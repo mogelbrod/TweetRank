@@ -1,28 +1,39 @@
-from http.client import HTTPConnection
-from urllib.parse import urlencode
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
-def http_request(url, server, port = 80, data = None):
-    """Request a URL to a HTPP server.
+import http.client
+from socket import setdefaulttimeout
 
-    `url' must be the Absolute URL in the case that `server' is the address of a proxy server.
+def http_request(url, server, port=80, body=None, timeout=20.0):
+    method = "GET"
+    if body != None: method = "POST"
+
+    status = 999
+    data  = None
+    rtime = None
+    rhits = None
     
-    `data` is used on POST requests. `data' must be a dictionary containing the parameters that will be embedded in the
-    body of the HTTP request. If `data' = None, a GET request is assumed.
+    try:
+        conn = http.client.HTTPConnection(server, port, timeout=timeout)
+        conn.request(method, url)
+        setdefaulttimeout(timeout)
+        resp = conn.getresponse()
+        
+        if resp.getheader('Server', 'error') != 'tfe':
+            # Response not from Twitter
+            return 999, None, None, None
+        
+        status = resp.status
+        rtime  = int(resp.getheader('X-RateLimit-Reset', 0))
+        rhits  = int(resp.getheader('X-RateLimit-Remaining', 0))
 
-    This function returns an HTTPResponse instance.
-    """
-    headers = {} # headers
-    body  = None # formated data parameters
-    method = 'GET'
-    if data != None:
-        headers = {"Content-type": "application/x-www-form-urlencoded"}
-        body  = urlencode(data)
-        method = 'POST'
+        if resp.status == http.client.OK:
+            data  = resp.read()
 
-    # TODO: Timeouts!
-    conn = HTTPConnection(server, port)
-    conn.request(method, url, body, headers)
-    resp = conn.getresponse()
-    data = resp.read()
-    conn.close()
-    return (resp.status, data)
+    except KeyboardInterrupt as e:
+        raise (e)
+    except Exception as e:
+        print(e)
+        return 999, None, None, None
+
+    return status, data, rhits, rtime
