@@ -3,7 +3,7 @@
 
 class Tweet:
     def __init__(self, dom):
-        self.xml = dom.toxml('utf-8')
+        self.xml = b'<status>' + b''.join(node.toxml('utf-8') for node in dom.childNodes) + b'</status>'
         self.__init_tweet_id(dom)
         self.__init_user_id(dom)
         self.__init_retweeted_id(dom)
@@ -11,6 +11,21 @@ class Tweet:
         self.__init_mentioned_ids(dom)
         self.__init_hashtags(dom)
         self.__init_retweeted_status(dom)
+
+    def __eq__(self, other):
+        return (other != None and self.id == other.id)
+
+    def __ne__(self, other):
+        return (other != None and self.id != other.id)    
+
+    def __lt__(self, other):
+        return (other != None and self.id < other.id)
+
+    def __gt__(self, other):
+        return (other != None and self.id > other.id)
+
+    def __hash__(self):
+        return self.id
 
     def __init_tweet_id(self, dom):
         self.id = None

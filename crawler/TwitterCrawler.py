@@ -3,7 +3,6 @@
 
 from xml.dom.minidom import parseString
 from ProxiedRequester import ProxiedRequester
-from TweetsWarehouse import TweetsWarehouse
 from UsersWarehouse import UsersWarehouse
 from UsersFrontier import UsersFrontier
 from Tweet import Tweet
@@ -15,24 +14,22 @@ from OsUtils import get_utc_time
 class TwitterCrawler:            
     def __init__(self, datadir, crawl_period = 60, workers=2):
         self.frontier = UsersFrontier(datadir + '/frontier.txt')
-        self.tweets = TweetsWarehouse(datadir + '/tweets/')
-        self.users  = UsersWarehouse(datadir + '/users/')
+        self.users  = UsersWarehouse(datadir + '/users/', datadir + '/tweets/')
         self.requester = ProxiedRequester(datadir + '/proxies.txt')
         self.crawl_period = crawl_period
         print('Master crawler ready!')
 
     def crawl(self, nworkers=1):
-        workers = [self.CrawlerWorker(self.frontier, self.tweets, self.users, self.requester, self.crawl_period)
+        workers = [self.CrawlerWorker(self.frontier, self.users, self.requester, self.crawl_period)
                    for i in range(nworkers)]
         for w in workers: w.start()
         for w in workers: w.join()
 
     class CrawlerWorker(Thread):
-        def __init__(self, frontier, tweets, users, requester, crawl_period):
+        def __init__(self, frontier, users, requester, crawl_period):
             Thread.__init__(self)
             self.daemon = True
             self.frontier = frontier
-            self.tweets = tweets
             self.users  = users
             self.requester = requester
             self.crawl_period = crawl_period
@@ -60,7 +57,7 @@ class TwitterCrawler:
                         tweets = domdata.getElementsByTagName('status')
                         for tweet in tweets:
                             result.append(Tweet(tweet))
-                        if len(tweets) < count or page == maxpages: return result # OK
+                        if len(tweets) == 0 or page == maxpages: return result # OK
                         else: page = page + 1      # Next page    
                     except:
                         # In the case of XML parsing errors, ignore these tweets
@@ -118,10 +115,9 @@ class TwitterCrawler:
             return set(result) # OK
 
 
-        def crawl(self, maxusers = 500, maxtweets = None):
-            while len(self.frontier) > 0 and (maxtweets == None or (maxtweets != None and len(self.tweets) < maxtweets)):
+        def crawl(self, maxusers = 500):
+            while len(self.frontier) > 0:
                 next_crawl_time,last_tweet_id,user = self.frontier.pop()
-                print('Thread %d: Crawling %d...' % (self.ident,user))
 
                 time_diff = next_crawl_time - get_utc_time()
                 if time_diff > 0 : # Suspend
@@ -142,22 +138,32 @@ class TwitterCrawler:
                     
 
                 friends = [nu for nu in new_users]
-
+                tweets_by_uid = {user: set([tw for tw in tweets_by_user])}
                 hashtags=[]
+
+                # Traverse the fetched tweets to get retweeted statuses,
+                # mentioned users, hashtags, etc.
                 for tweet in tweets_by_user:
-                    # Save the fetched tweet
-                    self.tweets.add(tweet)
+                    # Add hashtags
                     hashtags.extend(tweet.get_hashtags())
+
+                    # Update the largest tweet_id for user_id
                     if tweet.get_tweet_id() > last_tweet_id:
                         last_tweet_id = tweet.get_tweet_id()
 
-                    # Save the original retweeted status, if any
+                    # Get the original retweeted status, if any
                     retweeted = tweet.get_retweeted_status()
                     if retweeted != None:
-                        self.tweets.add(retweeted)
+                        tl = tweets_by_uid.get(retweeted.get_user_id(), None)
+                        if tl == None: tweets_by_uid[retweeted.get_user_id()] = set([retweeted])
+                        else: tl.add(retweeted)
 
                     # Extract the users mentioned
                     new_users.update(tweet.get_mentioned_ids())
+
+                # Store the crawled statuses
+                for item in tweets_by_uid.items():
+                    self.users.add_tweets_to_user(item[0], item[1])
 
                 # Extend the frontier
                 for nu in new_users:

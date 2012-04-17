@@ -14,9 +14,10 @@ def http_request(url, server, port=80, body=None, timeout=20.0):
     rhits = None
     
     try:
-        conn = http.client.HTTPConnection(server, port, timeout=timeout)
-        conn.request(method, url)
         setdefaulttimeout(timeout)
+        conn = http.client.HTTPConnection(server, port, timeout=timeout)        
+        conn.request(method, url)
+        conn.sock.settimeout(timeout)
         resp = conn.getresponse()
         
         if resp.getheader('Server', 'error') != 'tfe':

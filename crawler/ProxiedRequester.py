@@ -39,11 +39,8 @@ class ProxiedRequester:
 
         def __set_rate_limits(self, rhits, rtime):
             self.tllock.acquire()
-            if rtime > self.rtime:
-                self.rtime = rtime
-                self.rhits = rhits
-            elif rtime == self.rtime and rhits < self.rhits:
-                self.rhits = rhits
+            self.rtime = rtime
+            self.rhits = rhits
             self.tllock.release()
 
         def check_rate_limits(self):

@@ -1,0 +1,75 @@
+Metadata-Version: 1.0
+Name: mysolr
+Version: 0.5.1
+Summary: Solr Python binding
+Home-page: http://mysolr.redtuna.org
+Author: Rubén Abad, Miguel Olivares
+Author-email: ruabag@gmail.com, miguel@moliware.com
+License: UNKNOWN
+Description: mysolr
+        ======
+        
+        Fast python solr binding. Check full documentation here_
+        
+        Status
+        ------
+        
+        .. image:: https://secure.travis-ci.org/RedTuna/mysolr.png
+        
+        Features
+        --------
+        
+        * Full query syntax support
+        * Facets support
+        * Highlighting support
+        * Spellchecker support
+        * Stats support
+        * Concurrent searchs
+        * Python 3 compatible
+        
+        
+        Instalation
+        -----------
+        
+        From source code: ::
+        
+          python setup.py install
+        
+        From pypi: ::
+        
+          pip intall mysolr
+        
+        
+        Usage
+        -----
+        ::
+        
+          from mysolr import Solr
+        
+          # Default connection to localhost:8080
+          solr = Solr()
+        
+          # All solr params are supported!
+          query = {'q' : '*:*', 'facet' : 'true', 'facet.field' : 'foo'}
+          response = solr.search(**query)
+        
+          # do stuff with documents
+          for document in response.documents:
+              # modify field 'foo'
+              document['foo'] = 'bar'
+        
+          # update index with modified documents
+          solr.update(response.documents, commit=True)
+        
+        
+        .. _here: http://mysolr.redtuna.org
+Platform: UNKNOWN
+Classifier: Development Status :: 1 - Planning
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Natural Language :: English
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3.2
+Classifier: Programming Language :: Python
+Classifier: Topic :: Software Development :: Libraries :: Python Modules

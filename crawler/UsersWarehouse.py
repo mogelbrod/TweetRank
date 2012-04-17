@@ -4,11 +4,14 @@
 from OsUtils import safemkdir, safemv, generate_tmp_fname
 from threading import Lock
 from os import listdir
+from xml.dom.minidom import parse
+from Tweet import Tweet
 
 class UsersWarehouse:
-    def __init__(self, users_dir):
+    def __init__(self, users_dir, tweets_dir):
         self.lock = Lock()
-        self.usersdir = users_dir
+        self.usersdir  = users_dir
+        self.tweetsdir = tweets_dir
         self.users = set()
         self.__load()
 
@@ -85,6 +88,35 @@ class UsersWarehouse:
             safemv(htmp, hashtags_file)
         except Exception as ex:
             raise ex
+
+    def __load_user_tweets(self, user_id):
+        result = set()
+        try:
+            tweets_file = '%s/%d.tweets' % (self.tweetsdir, user_id)
+            f = open(tweets_file, 'r')
+            domdata = parse(f)
+            tweets = domdata.getElementsByTagName('status')
+            for tw in tweets:
+                result.add(Tweet(tw))              
+            f.close()
+        except IOError:
+            pass
+        return result
+
+    def __save_user_tweets(self, user_id, set_of_tweets):
+        tweets_file = '%s/%d.tweets' % (self.tweetsdir, user_id)
+        f = open(tweets_file, 'wb')
+        f.write(b'<?xml version="1.0" encoding="UTF-8"?>\n')
+        f.write(b'<statuses type="array">\n')
+        for tweet in set_of_tweets:
+            f.write(tweet.get_xml() + b'\n')
+        f.write(b'</statuses>')
+        f.close()
+
+    def add_tweets_to_user(self, user_id, set_of_tweets):
+        existing_tweets = self.__load_user_tweets(user_id)
+        existing_tweets.update(set_of_tweets)
+        self.__save_user_tweets(user_id, set_of_tweets)
         
     def get(self, user_id):
         friends,hashtags=None,None
