@@ -13,6 +13,7 @@ class UsersFrontier:
         self.users_in_frontier = set()
         self.save_ops = save_ops
         self.ops = 0
+        self.size = 0
         self.__load()
 
     def __load(self):
@@ -28,6 +29,7 @@ class UsersFrontier:
                     self.frontier.append( (int(l[2]), int(l[1]), int(l[0])) ) # Next_Query_Time, Last_Tweet_ID, UserID
                     self.users_in_frontier.add( int(l[0]) )
             heapify(self.frontier)
+            self.size = len(self.frontier)
         except Exception as e:
             print(e)
         finally:
@@ -42,17 +44,26 @@ class UsersFrontier:
             for u in self.frontier:
                 f.write("%d\t%d\t%d\n" % (u[2], u[1], u[0]))
             f.close()
-            safemv(tmp_fname, fname)
+            safemv(tmp_fname, self.frontierfile)
         except Exception as e:
             print(e)
         finally:
             self.lock.release()
 
     def __contains__(self, user):
-        return user in self.users_in_frontier
+        self.lock.acquire()
+        is_in = False
+        try:
+            is_in = (user in self.users_in_frontier)
+        finally:
+            self.lock.release()
+        return is_in
 
     def __len__(self):
-        return len(self.frontier)
+        self.lock.acquire()
+        size = self.size
+        self.lock.release()
+        return size
 
     def push(self, user, tweet, time):
         self.lock.acquire()
@@ -61,6 +72,7 @@ class UsersFrontier:
                 heappush(self.frontier, (time, tweet, user))
                 self.users_in_frontier.add( user )
                 self.ops = self.ops + 1
+                self.size = self.size + 1
         except Exception as e:
             raise e
         finally:
