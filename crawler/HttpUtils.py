@@ -1,40 +1,29 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 
-import http.client
-from socket import setdefaulttimeout
+from tornado.httpclient import HTTPClient, HTTPError
 
-def http_request(url, server, port=80, body=None, timeout=20.0):
-    method = "GET"
-    if body != None: method = "POST"
-
-    status = 999
-    data  = None
-    rtime = None
-    rhits = None
-    
+def http_request(url, server, port=80, timeout=20.0):
+    http_client = HTTPClient()
+    code, data, rtime, rhits = None, None, None, None
     try:
-        setdefaulttimeout(timeout)
-        conn = http.client.HTTPConnection(server, port, timeout=timeout)        
-        conn.request(method, url)
-        conn.sock.settimeout(timeout)
-        resp = conn.getresponse()
+        response = http_client.fetch(url, proxy_host=server, proxy_port=port, connect_timeout=timeout, request_timeout=timeout)
+        response.rethrow()
         
-        if resp.getheader('Server', 'error') != 'tfe':
-            # Response not from Twitter
+        srv = response.headers.get_list('Server')
+        if len(srv) == 0 or srv[0] != 'tfe':
+            # Response does not come from Twitter
             return 999, None, None, None
         
-        status = resp.status
-        rtime  = int(resp.getheader('X-RateLimit-Reset', 0))
-        rhits  = int(resp.getheader('X-RateLimit-Remaining', 0))
+        data = response.body
+        code = response.code
+        rtime = response.headers.get_list('X-RateLimit-Reset')
+        rhits = response.headers.get_list('X-RateLimit-Remaining')
+        if len(rtime) > 0: rtime = int(rtime[0])
+        else: rtime = None
+        if len(rhits) > 0: rhits = int(rhits[0])
+        else: rhits = None
+    except HTTPError as e:
+        code, data, rhits, rtime = e.code, None, None, None
 
-        if resp.status == http.client.OK:
-            data  = resp.read()
-
-    except KeyboardInterrupt as e:
-        raise (e)
-    except Exception as e:
-        print(e)
-        return 999, None, None, None
-
-    return status, data, rhits, rtime
+    return code, data, rhits, rtime

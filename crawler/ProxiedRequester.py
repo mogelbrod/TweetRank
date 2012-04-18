@@ -1,7 +1,6 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 
-import http.client
 from HttpUtils import http_request
 from OsUtils import get_utc_time, safemv, generate_tmp_fname
 from threading import Lock
@@ -51,15 +50,14 @@ class ProxiedRequester:
             self.tllock.release()
             return valid
 
-        def request(self, url, body = None):
+        def request(self, url):
             if not self.check_rate_limits():
                 return 400, None
 
             self.__increment_total_requests()
 
-            status, data, rhits, rtime = http_request(url, self.address, self.port, body)
-            if rhits != None and rtime != None:
-                self.__set_rate_limits(rhits, rtime)
+            status, data, rhits, rtime = http_request(url, self.address, self.port)
+            self.__set_rate_limits(rhits, rtime)
 
             if status == 200:
                 self.__increment_ok_requests()
@@ -89,13 +87,14 @@ class ProxiedRequester:
 
                 l = l.split()
                 if len(l) < 2: continue
-                server, port, ok_reqs, tot_reqs, rhits, rtime = l[0], int(l[1]), 0, 0, 0, 0
+                server, port, ok_reqs, tot_reqs, rhits, rtime = l[0], int(l[1]), 0, 0, 0, None
 
                 if len(l) >= 4: 
                     ok_reqs, tot_reqs = int(l[2]), int(l[3])
 
                 if len(l) >= 6:
-                    rhits, rtime = int(l[4]), int(l[5])
+                    rhits, rtime = int(l[4]), eval(l[5])
+                    if rtime == 0: rtime = None
 
                 self.proxies.append(self.ProxyEntry(server, port, ok_reqs, tot_reqs, rhits, rtime))
 
@@ -133,8 +132,7 @@ class ProxiedRequester:
         self.cplock.release()
         return cp
         
-    def request(self, url, body = None):
-        min_rtime = None
+    def request(self, url):
         tried_proxies = 0
         cp = self.__get_current_proxy()
         while tried_proxies < len(self.proxies):
@@ -149,26 +147,19 @@ class ProxiedRequester:
             print('Requesting %s on %s:%d...' % (url, proxy.address, proxy.port))
 
             # Send query
-            t1 = time()
-            status, data = 999, None
-            status, data = proxy.request(url, body)
-            t2 = time()
-            if status != 999 and (min_rtime == None or proxy.rtime < min_rtime):
-                min_rtime = proxy.rtime
+            status, data = proxy.request(url)
 
-            print('status=%d, time=%d, rhits=%d, rtime=%d' % (status, t2-t1, proxy.rhits, proxy.rtime))
+            print('status=%d, time=%d, rhits=%d, rtime=%d' % (status, proxy.rhits, proxy.rtime))
 
-            if status == http.client.OK:
+            if status == 200:
                 # Everything OK. Save statistics and continue
                 self.__save_proxies()
                 return (status, data, None)
-            elif status == http.client.UNAUTHORIZED or status == http.client.NOT_FOUND:
+            elif status == 401 or status == 404:
                 # Bad query, do not try again
                 self.__save_proxies()
-                return (-2, None, None)
-            elif status == http.client.INTERNAL_SERVER_ERROR or \
-            status == http.client.BAD_GATEWAY or \
-            status == http.client.SERVICE_UNAVAILABLE:
+                return (status, None, None)
+            elif status == 500 or status == 502 or status == 503:
                 # Twitter temporaly unavailable, try again
                 pass 
             else:
@@ -177,12 +168,13 @@ class ProxiedRequester:
                 tried_proxies = tried_proxies + 1
                 
             
-        # No valid proxies to send the request
-        # Check if we can wait, or we should abourt
-        difft=None
-        if min_rtime != None:
-            difft = min_rtime - get_utc_time()
-            if difft < 0: difft = None
-
+        # Save proxies
         self.__save_proxies()
-        return (-1, None, difft)
+        
+        # No valid proxies to send the request
+        # Check if we can wait, or we should abort        
+        rtimes = [p.rtime for p in self.proxies if p.rtime != None]
+        if len(rtimes) == 0:
+            return (999, None, None)
+        else:
+            return (999, None, min(rtimes))

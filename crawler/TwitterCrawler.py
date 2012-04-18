@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 
 from xml.dom.minidom import parseString
@@ -45,13 +45,13 @@ class TwitterCrawler:
             while True:
                 (status, xmldata, wait_time) = self.requester.request("%s&count=%d&page=%d" % (query, count, page))
 
-                if status == -1 and wait_time == None:
+                if status == 999 and wait_time == None:
                     return None         # No proxy is working, abort!
-                elif status == -1:
+                elif status == 999:
                     sleep(wait_time)    # Wait until some server works
-                elif status == -2:
+                elif status != 200:
                     return []           # Query error (for instance: user has protected tweets)
-                elif status == 200:
+                else:
                     try:
                         domdata = parseString(xmldata.decode('utf-8'))
                         tweets = domdata.getElementsByTagName('status')
@@ -69,13 +69,13 @@ class TwitterCrawler:
                 result = []
                 (status, xmldata, wait_time) = self.requester.request(query)
 
-                if status == -1 and wait_time == None:
+                if status == 999 and wait_time == None:
                     return None         # No proxy is working, abort!
-                elif status == -1:
+                elif status == 999:
                     sleep(wait_time)    # Wait until some server works
-                elif status == -2:
+                elif status != 200:
                     return []           # Query error (for instance: user has protected tweets)
-                elif status == 200:
+                else:
                     try:
                         domdata = parseString(xmldata.decode('utf-8'))
                         tweets = domdata.getElementsByTagName('status')
@@ -99,13 +99,13 @@ class TwitterCrawler:
             result = []
             while (curr_cursor != prev_cursor):
                 (status, xmldata, wait_time) = self.requester.request("%s&cursor=%d" % (query, curr_cursor))
-                if status == -1 and wait_time == None:
+                if status == 999 and wait_time == None:
                     return None         # No proxy is working, abort!
-                elif status == -1:
+                elif status == 999:
                     sleep(wait_time)    # Wait until some server works
-                elif status == -2:
+                elif status != 200:
                     return set([])      # Query error (for instance: user has protected followers)
-                elif status == 200:
+                else:
                     data = parseString(xmldata.decode('utf-8'))
                     curr_cursor = int(data.getElementsByTagName('next_cursor')[0].firstChild.data)
                     prev_cursor = int(data.getElementsByTagName('previous_cursor')[0].firstChild.data)
