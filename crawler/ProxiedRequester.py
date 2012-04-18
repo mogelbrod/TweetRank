@@ -24,7 +24,14 @@ class ProxiedRequester:
             return (self.address == other.address and self.port == other.port)
         
         def __str__(self):
-            return '%s %d %d %d %d %d' % (self.address, self.port, self.ok_reqs, self.tot_reqs, self.rhits, self.rtime)
+            if self.rhits != None and self.rtime != None:
+                return '%s %d %d %d %d %d' % (self.address, self.port, self.ok_reqs, self.tot_reqs, self.rhits, self.rtime)
+            elif self.rhits != None and self.rtime == None:
+                return '%s %d %d %d %d None' % (self.address, self.port, self.ok_reqs, self.tot_reqs, self.rhits)
+            elif self.rhits == None and self.rtime != None:
+                return '%s %d %d %d None %d' % (self.address, self.port, self.ok_reqs, self.tot_reqs, self.rtime)
+            else:
+                return '%s %d %d %d None None' % (self.address, self.port, self.ok_reqs, self.tot_reqs)
 
         def __increment_total_requests(self):
             self.trlock.acquire()
@@ -93,8 +100,7 @@ class ProxiedRequester:
                     ok_reqs, tot_reqs = int(l[2]), int(l[3])
 
                 if len(l) >= 6:
-                    rhits, rtime = int(l[4]), eval(l[5])
-                    if rtime == 0: rtime = None
+                    rhits, rtime = eval(l[4]), eval(l[5])
 
                 self.proxies.append(self.ProxyEntry(server, port, ok_reqs, tot_reqs, rhits, rtime))
 
