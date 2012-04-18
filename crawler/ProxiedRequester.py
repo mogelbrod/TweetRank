@@ -94,7 +94,7 @@ class ProxiedRequester:
 
                 l = l.split()
                 if len(l) < 2: continue
-                server, port, ok_reqs, tot_reqs, rhits, rtime = l[0], int(l[1]), 0, 0, 0, None
+                server, port, ok_reqs, tot_reqs, rhits, rtime = l[0], int(l[1]), 0, 0, None, None
 
                 if len(l) >= 4: 
                     ok_reqs, tot_reqs = int(l[2]), int(l[3])
@@ -157,7 +157,7 @@ class ProxiedRequester:
 
             if proxy.rhits != None and proxy.rtime != None:
                 print('status=%d, rhits=%d, rtime=%d' % (status, proxy.rhits, proxy.rtime))                
-            if proxy.rhits == None and proxy.rtime != None:
+            elif proxy.rhits == None and proxy.rtime != None:
                 print('status=%d, rhits=None, rtime=%d' % (status, proxy.rtime))
             elif proxy.rhits != None and proxy.rtime == None:
                 print('status=%d, rhits=%d, rtime=None' % (status, proxy.rhits))

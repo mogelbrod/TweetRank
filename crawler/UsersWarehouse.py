@@ -73,15 +73,15 @@ class UsersWarehouse:
             ftmp = generate_tmp_fname(friends_file)
             htmp = generate_tmp_fname(hashtags_file)
             
-            f = open(ftmp, 'w')
+            f = open(ftmp, 'wb')
             for friend_id in friends:
-                f.write('%d\n' % friend_id)
+                f.write(b'%d\n' % friend_id)
             f.close()
 
             # Save hashtags
-            f = open(htmp, 'w')
+            f = open(htmp, 'wb')
             for ht in hashtags.items():
-                f.write('%s %d\n' % (ht[0], ht[1]))
+                f.write(b'%s %d\n' % (ht[0], ht[1]))
             f.close()
 
             safemv(ftmp, friends_file)
@@ -93,7 +93,7 @@ class UsersWarehouse:
         result = set()
         try:
             tweets_file = '%s/%d.tweets' % (self.tweetsdir, user_id)
-            f = open(tweets_file, 'r')
+            f = open(tweets_file, 'rb')
             domdata = parse(f)
             tweets = domdata.getElementsByTagName('status')
             for tw in tweets:
