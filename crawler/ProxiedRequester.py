@@ -61,7 +61,7 @@ class ProxiedRequester:
             if rhits != None and rtime != None:
                 self.__set_rate_limits(rhits, rtime)
 
-            if status != 999:
+            if status == 200:
                 self.__increment_ok_requests()
             
             return status, data
