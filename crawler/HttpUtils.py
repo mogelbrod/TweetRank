@@ -1,9 +1,10 @@
 #!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 
-from tornado.httpclient import HTTPClient, HTTPError
+from tornado.httpclient import AsyncHTTPClient, HTTPClient, HTTPError
 
 def http_request(url, server, port=80, timeout=20.0):
+    AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
     http_client = HTTPClient()
     code, data, rtime, rhits = None, None, None, None
     try:

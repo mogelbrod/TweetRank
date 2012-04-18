@@ -10,6 +10,7 @@ from time import sleep
 from random import randint
 from threading import Thread
 from OsUtils import get_utc_time
+from EscapeXMLIllegalCharEntities import EscapeXMLIllegalCharEntities
 
 class TwitterCrawler:            
     def __init__(self, datadir, crawl_period = 60, workers=2):
@@ -17,7 +18,6 @@ class TwitterCrawler:
         self.users  = UsersWarehouse(datadir + '/users/', datadir + '/tweets/')
         self.requester = ProxiedRequester(datadir + '/proxies.txt')
         self.crawl_period = crawl_period
-        print('Master crawler ready!')
 
     def crawl(self, nworkers=1):
         workers = [self.CrawlerWorker(self.frontier, self.users, self.requester, self.crawl_period)
@@ -52,17 +52,12 @@ class TwitterCrawler:
                 elif status != 200:
                     return []           # Query error (for instance: user has protected tweets)
                 else:
-                    try:
-                        domdata = parseString(xmldata.decode('utf-8'))
-                        tweets = domdata.getElementsByTagName('status')
-                        for tweet in tweets:
-                            result.append(Tweet(tweet))
-                        if len(tweets) == 0 or page == maxpages: return result # OK
-                        else: page = page + 1      # Next page    
-                    except:
-                        # In the case of XML parsing errors, ignore these tweets
-                        if page == maxpages: return result
-                        else: page = page + 1
+                    domdata = parseString(EscapeXMLIllegalCharEntities(xmldata.encode('utf-8')))
+                    tweets = domdata.getElementsByTagName('status')
+                    for tweet in tweets:
+                        result.append(Tweet(tweet))
+                    if len(tweets) == 0 or page == maxpages: return result # OK
+                    else: page = page + 1      # Next page    
 
         def get_twitter_singlepage_query(self, query):
             while True:
@@ -76,13 +71,10 @@ class TwitterCrawler:
                 elif status != 200:
                     return []           # Query error (for instance: user has protected tweets)
                 else:
-                    try:
-                        domdata = parseString(xmldata.decode('utf-8'))
-                        tweets = domdata.getElementsByTagName('status')
-                        for tweet in tweets:
-                            result.append(Tweet(tweet))
-                    finally:
-                        pass # Ignore parse exception
+                    domdata = parseString(EscapeXMLIllegalCharEntities(xmldata.encode('utf-8')))
+                    tweets = domdata.getElementsByTagName('status')
+                    for tweet in tweets:
+                        result.append(Tweet(tweet))
                     return result # OK
 
         def get_user_tweets(self, user_id, since_id = None):

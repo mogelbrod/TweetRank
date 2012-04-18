@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 
 from OsUtils import safemkdir, safemv, generate_tmp_fname
@@ -73,15 +73,15 @@ class UsersWarehouse:
             ftmp = generate_tmp_fname(friends_file)
             htmp = generate_tmp_fname(hashtags_file)
             
-            f = open(ftmp, 'wb')
+            f = open(ftmp, 'w')
             for friend_id in friends:
-                f.write(b'%d\n' % friend_id)
+                f.write('%d\n' % friend_id)
             f.close()
 
             # Save hashtags
-            f = open(htmp, 'wb')
+            f = open(htmp, 'w')
             for ht in hashtags.items():
-                f.write(b'%s %d\n' % (ht[0], ht[1]))
+                f.write('%s %d\n' % (ht[0].encode('utf-8'), ht[1]))
             f.close()
 
             safemv(ftmp, friends_file)
