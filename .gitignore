@@ -1,6 +1,6 @@
 data/*
 !data/start_frontier.txt
-!data/proxies.txt
+!data/start_proxies.txt
 !data/README.md
 
 doc/tweetrank_draft/*
