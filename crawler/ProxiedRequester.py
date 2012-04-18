@@ -149,7 +149,14 @@ class ProxiedRequester:
             # Send query
             status, data = proxy.request(url)
 
-            print('status=%d, time=%d, rhits=%d, rtime=%d' % (status, proxy.rhits, proxy.rtime))
+            if proxy.rhits != None and proxy.rtime != None:
+                print('status=%d, rhits=%d, rtime=%d' % (status, proxy.rhits, proxy.rtime))                
+            if proxy.rhits == None and proxy.rtime != None:
+                print('status=%d, rhits=None, rtime=%d' % (status, proxy.rtime))
+            elif proxy.rhits != None and proxy.rtime == None:
+                print('status=%d, rhits=%d, rtime=None' % (status, proxy.rhits))
+            else:
+                print('status=%d, rhits=None, rtime=None' % (status))
 
             if status == 200:
                 # Everything OK. Save statistics and continue
