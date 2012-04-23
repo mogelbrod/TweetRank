@@ -66,16 +66,15 @@ class Tweet:
                 self.hashtags.append(elem.getElementsByTagName('text')[0].firstChild.data.encode('utf-8'))
 
     def _init_retweeted_status(self, dom):
-        self.retweeted_status
+        self.retweeted_status = None
         rt_elem = dom.getElementsByTagName('retweeted_status')
         if len(rt_elem) == 0: return
         self.retweeted_status = rt_elem[0].cloneNode(True)
         self.retweeted_status.tagName = 'status'
         self.retweeted_status = Tweet(self.retweeted_status)
-        print(repr(self.retweeted_status))
-        print 'p1', self.retweeted_status
+        print 'p1', repr(self.retweeted_status)
         if self.retweeted_status != None:
-            print 'p2', self.retweeted_status
+            print 'p2', repr(self.retweeted_status)
 
     def get_tweet_id(self):
         return self.id

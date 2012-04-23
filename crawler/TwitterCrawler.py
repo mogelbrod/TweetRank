@@ -20,10 +20,12 @@ class TwitterCrawler:
         self.crawl_period = crawl_period
 
     def crawl(self, nworkers=1):
-        workers = [self.CrawlerWorker(self.frontier, self.users, self.requester, self.crawl_period)
-                   for i in range(nworkers)]
-        for w in workers: w.start()
-        for w in workers: w.join()
+        #workers = [self.CrawlerWorker(self.frontier, self.users, self.requester, self.crawl_period)
+        #           for i in range(nworkers)]
+        #for w in workers: w.start()
+        #for w in workers: w.join()
+        worker = self.CrawlerWorker(self.frontier, self.users, self.requester, self.crawl_period)
+        worker.crawl()
 
     class CrawlerWorker(Thread):
         def __init__(self, frontier, users, requester, crawl_period):
