@@ -83,7 +83,6 @@ class UsersWarehouse:
             safemv(htmp, hashtags_file)
 
     def add_user_tweets(self, user_id, set_of_tweets):
-        print len(set_of_tweets) # TODO
         if len(set_of_tweets) == 0: return
         tweets_file = generate_tmp_fname('%s/%d.tweets' % (self.tweetsdir, user_id))
         f = open(tweets_file, 'w')
