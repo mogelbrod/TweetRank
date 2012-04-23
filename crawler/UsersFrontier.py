@@ -14,9 +14,9 @@ class UsersFrontier:
         self.save_ops = save_ops
         self.ops = 0
         self.size = 0
-        self.__load()
+        self._load()
 
-    def __load(self):
+    def _load(self):
         self.lock.acquire()
         try:
             f = open(self.frontierfile, 'r')
@@ -30,12 +30,10 @@ class UsersFrontier:
                     self.users_in_frontier.add( int(l[0]) )
             heapify(self.frontier)
             self.size = len(self.frontier)
-        except Exception as e:
-            print(e)
         finally:
             self.lock.release()
 
-    def __save(self):
+    def _save(self):
         self.lock.acquire()
         try:
             tmp_fname = generate_tmp_fname(self.frontierfile)
@@ -45,8 +43,6 @@ class UsersFrontier:
                 f.write("%d\t%d\t%d\n" % (u[2], u[1], u[0]))
             f.close()
             safemv(tmp_fname, self.frontierfile)
-        except Exception as e:
-            print(e)
         finally:
             self.lock.release()
 
@@ -73,11 +69,9 @@ class UsersFrontier:
                 self.users_in_frontier.add( user )
                 self.ops = self.ops + 1
                 self.size = self.size + 1
-        except Exception as e:
-            raise e
         finally:
             self.lock.release()
-        if self.ops % self.save_ops == 0: self.__save()    
+        if self.ops % self.save_ops == 0: self._save()    
 
     def pop(self):
         self.lock.acquire()
@@ -85,8 +79,6 @@ class UsersFrontier:
         try:
             elem = heappop(self.frontier)
             self.users_in_frontier.remove(elem[2])
-        except Exception as e:
-            raise e
         finally:
             self.lock.release()
         return elem

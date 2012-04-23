@@ -33,23 +33,23 @@ class ProxiedRequester:
             else:
                 return '%s %d %d %d None None' % (self.address, self.port, self.ok_reqs, self.tot_reqs)
 
-        def __increment_total_requests(self):
+        def _increment_total_requests(self):
             self.trlock.acquire()
             self.tot_reqs = self.tot_reqs + 1
             self.trlock.release()
 
-        def __increment_ok_requests(self):
+        def _increment_ok_requests(self):
             self.orlock.acquire()
             self.ok_reqs = self.ok_reqs + 1
             self.orlock.release()
 
-        def __set_rate_limits(self, rhits, rtime):
+        def _set_rate_limits(self, rhits, rtime):
             self.tllock.acquire()
             self.rtime = rtime
             self.rhits = rhits
             self.tllock.release()
 
-        def check_rate_limits(self):
+        def _check_rate_limits(self):
             self.tllock.acquire()
             valid = True
             if self.rhits == 0 and get_utc_time() < self.rtime:
@@ -58,16 +58,16 @@ class ProxiedRequester:
             return valid
 
         def request(self, url):
-            if not self.check_rate_limits():
+            if not self._check_rate_limits():
                 return 400, None
 
-            self.__increment_total_requests()
+            self._increment_total_requests()
 
             status, data, rhits, rtime = http_request(url, self.address, self.port)
-            self.__set_rate_limits(rhits, rtime)
+            self._set_rate_limits(rhits, rtime)
 
             if status == 200:
-                self.__increment_ok_requests()
+                self._increment_ok_requests()
             
             return status, data
             
@@ -76,12 +76,12 @@ class ProxiedRequester:
         self.cplock = Lock()    # Lock for current_proxy pointer
         self.proxies  = []      # list of proxies
         self.proxy_file = proxy_file
-        self.__load_proxies()
+        self._load_proxies()
 
     def __del__(self):
-        self.__save_proxies()
+        self._save_proxies()
 
-    def __load_proxies(self):
+    def _load_proxies(self):
         """Load the proxies list from disk.
         """
         self.pflock.acquire()
@@ -110,7 +110,7 @@ class ProxiedRequester:
         finally:
             self.pflock.release()
 
-    def __save_proxies(self):
+    def _save_proxies(self):
         """Save the proxies list to disk.
         """
         self.pflock.acquire()
@@ -124,7 +124,7 @@ class ProxiedRequester:
         finally:
             self.pflock.release()
 
-    def __get_next_proxy(self, cp):
+    def _get_next_proxy(self, cp):
         self.cplock.acquire()
         if cp == self.curr_proxy:
             self.curr_proxy = (self.curr_proxy + 1) % len(self.proxies)
@@ -132,7 +132,7 @@ class ProxiedRequester:
         self.cplock.release()
         return cp
 
-    def __get_current_proxy(self):
+    def _get_current_proxy(self):
         self.cplock.acquire()
         cp = int(self.curr_proxy)
         self.cplock.release()
@@ -140,14 +140,14 @@ class ProxiedRequester:
         
     def request(self, url):
         tried_proxies = 0
-        cp = self.__get_current_proxy()
+        cp = self._get_current_proxy()
         while tried_proxies < len(self.proxies):
             # Selects the proxy to use.
             # Checks that the proxy has not reached the rate limit.
             proxy = self.proxies[cp]
-            if not proxy.check_rate_limits():
+            if not proxy._check_rate_limits():
                 tried_proxies = tried_proxies + 1
-                cp = self.__get_next_proxy(cp)
+                cp = self._get_next_proxy(cp)
                 continue
             
             print('Requesting %s on %s:%d...' % (url, proxy.address, proxy.port))
@@ -166,23 +166,23 @@ class ProxiedRequester:
 
             if status == 200:
                 # Everything OK. Save statistics and continue
-                self.__save_proxies()
+                self._save_proxies()
                 return (status, data, None)
             elif status == 401 or status == 404:
                 # Bad query, do not try again
-                self.__save_proxies()
+                self._save_proxies()
                 return (status, None, None)
             elif status == 500 or status == 502 or status == 503:
                 # Twitter temporaly unavailable, try again
                 pass 
             else:
                 # Something went wrong. Try a new proxy!
-                cp = self.__get_next_proxy(cp)
+                cp = self._get_next_proxy(cp)
                 tried_proxies = tried_proxies + 1
                 
             
         # Save proxies
-        self.__save_proxies()
+        self._save_proxies()
         
         # No valid proxies to send the request
         # Check if we can wait, or we should abort        

@@ -145,7 +145,6 @@ class TwitterCrawler:
                     # Get the original retweeted status, if any
                     retweeted = tweet.get_retweeted_status()
                     if retweeted != None:
-                        print "%d -> %d" % (tweet.get_tweet_id(), retweeted.get_tweet_id())
                         if retweeted.get_user_id() not in tweets_by_uid:
                             tweets_by_uid[retweeted.get_user_id()] = set([retweeted])
                         else:

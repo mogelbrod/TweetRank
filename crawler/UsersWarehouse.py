@@ -14,9 +14,9 @@ class UsersWarehouse:
         self.usersdir  = users_dir
         self.tweetsdir = tweets_dir
         self.users = set()
-        self.__load()
+        self._load()
 
-    def __load(self):
+    def _load(self):
         safemkdir(self.usersdir)
         safemkdir(self.tweetsdir)
         self.lock.acquire()
@@ -24,8 +24,6 @@ class UsersWarehouse:
             for f in listdir(self.usersdir):
                 f = f.split('.')
                 self.users.add(int(f[0]))
-        except Exception as ex:
-            raise ex
         finally:
             self.lock.release()        
 
@@ -42,7 +40,7 @@ class UsersWarehouse:
         for uid in self.users:
             yield uid
 
-    def __load_user_data(self, user_id):
+    def _load_user_data(self, user_id):
         friends, hashtags = set(), dict()        
         try:
             # Load friends
@@ -63,7 +61,7 @@ class UsersWarehouse:
                 raise (e)
         return friends, hashtags
 
-    def __save_user_data(self, user_id, friends, hashtags):
+    def _save_user_data(self, user_id, friends, hashtags):
         # Save friends
         if len(friends) > 0:
             friends_file = self.usersdir + ('/%s.friends' % user_id)
@@ -100,9 +98,7 @@ class UsersWarehouse:
         friends,hashtags=None,None
         self.lock.acquire()
         try:
-            friends,hashtags=self.__load_user_data(user_id)
-        except Exception as ex:
-            raise ex
+            friends,hashtags=self._load_user_data(user_id)
         finally:
             self.lock.release()
         return friends,hashtags
@@ -110,14 +106,12 @@ class UsersWarehouse:
     def add(self, user_id, friends_ids, hashtags):
         self.lock.acquire()
         try:
-            stored_friends, stored_hashtags = self.__load_user_data(user_id)
+            stored_friends, stored_hashtags = self._load_user_data(user_id)
             stored_friends.update(friends_ids)
             for ht in hashtags:
                 c = stored_hashtags.get(ht, 0)
                 c = c+1
                 stored_hashtags[ht] = c
-            self.__save_user_data(user_id, stored_friends, stored_hashtags)
-        except Exception as ex:
-            raise ex
+            self._save_user_data(user_id, stored_friends, stored_hashtags)
         finally:
             self.lock.release()
