@@ -3,8 +3,6 @@
 
 class Tweet:
     def __init__(self, dom):
-        self.id = None
-        self.retweeted_status = None
         self.xml = ('<status>' + ''.join(node.toxml('utf-8') for node in dom.childNodes) + '</status>')
         self._init_tweet_id(dom)
         self._init_user_id(dom)
@@ -15,16 +13,16 @@ class Tweet:
         self._init_retweeted_status(dom)       
 
     def __eq__(self, other):
-        return (other != None and self.id == other.id)
+        return (other is not None and self.id == other.id)
 
     def __ne__(self, other):
-        return (other != None and self.id != other.id)    
+        return (other is not None and self.id != other.id)    
 
     def __lt__(self, other):
-        return (other != None and self.id < other.id)
+        return (other is not None and self.id < other.id)
 
     def __gt__(self, other):
-        return (other != None and self.id > other.id)
+        return (other is not None and self.id > other.id)
 
     def __hash__(self):
         return self.id
@@ -49,7 +47,7 @@ class Tweet:
     def _init_replied_id(self, dom):
         self.replied_id = None
         for elem_id in dom.getElementsByTagName('in_reply_to_status_id'):
-            if elem_id.parentNode.tagName == 'status' and elem_id.firstChild != None:
+            if elem_id.parentNode.tagName == 'status' and elem_id.firstChild is not None:
                 self.replied_id = int(elem_id.firstChild.data)
 
     def _init_mentioned_ids(self, dom):
@@ -72,9 +70,6 @@ class Tweet:
         self.retweeted_status = rt_elem[0].cloneNode(True)
         self.retweeted_status.tagName = 'status'
         self.retweeted_status = Tweet(self.retweeted_status)
-        print 'p1', repr(self.retweeted_status)
-        if self.retweeted_status != None:
-            print 'p2', repr(self.retweeted_status)
 
     def get_tweet_id(self):
         return self.id

@@ -24,11 +24,11 @@ class ProxiedRequester:
             return (self.address == other.address and self.port == other.port)
         
         def __str__(self):
-            if self.rhits != None and self.rtime != None:
+            if self.rhits is not None and self.rtime is not None:
                 return '%s %d %d %d %d %d' % (self.address, self.port, self.ok_reqs, self.tot_reqs, self.rhits, self.rtime)
-            elif self.rhits != None and self.rtime == None:
+            elif self.rhits is not None and self.rtime is None:
                 return '%s %d %d %d %d None' % (self.address, self.port, self.ok_reqs, self.tot_reqs, self.rhits)
-            elif self.rhits == None and self.rtime != None:
+            elif self.rhits is None and self.rtime is not None:
                 return '%s %d %d %d None %d' % (self.address, self.port, self.ok_reqs, self.tot_reqs, self.rtime)
             else:
                 return '%s %d %d %d None None' % (self.address, self.port, self.ok_reqs, self.tot_reqs)
@@ -155,11 +155,11 @@ class ProxiedRequester:
             # Send query
             status, data = proxy.request(url)
 
-            if proxy.rhits != None and proxy.rtime != None:
+            if proxy.rhits is not None and proxy.rtime is not None:
                 print('status=%d, rhits=%d, rtime=%d' % (status, proxy.rhits, proxy.rtime))                
-            elif proxy.rhits == None and proxy.rtime != None:
+            elif proxy.rhits is None and proxy.rtime is not None:
                 print('status=%d, rhits=None, rtime=%d' % (status, proxy.rtime))
-            elif proxy.rhits != None and proxy.rtime == None:
+            elif proxy.rhits is not None and proxy.rtime is None:
                 print('status=%d, rhits=%d, rtime=None' % (status, proxy.rhits))
             else:
                 print('status=%d, rhits=None, rtime=None' % (status))
@@ -186,7 +186,7 @@ class ProxiedRequester:
         
         # No valid proxies to send the request
         # Check if we can wait, or we should abort        
-        rtimes = [p.rtime for p in self.proxies if p.rtime != None]
+        rtimes = [p.rtime for p in self.proxies if p.rtime is not None]
         if len(rtimes) == 0:
             return (999, None, None)
         else:

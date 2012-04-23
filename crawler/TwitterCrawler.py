@@ -47,7 +47,7 @@ class TwitterCrawler:
             while True:
                 (status, xmldata, wait_time) = self.requester.request("%s&count=%d&page=%d" % (query, count, page))
 
-                if status == 999 and wait_time == None:
+                if status == 999 and wait_time is None:
                     return None         # No proxy is working, abort!
                 elif status == 999:
                     sleep(wait_time)    # Wait until some server works
@@ -66,7 +66,7 @@ class TwitterCrawler:
                 result = []
                 (status, xmldata, wait_time) = self.requester.request(query)
 
-                if status == 999 and wait_time == None:
+                if status == 999 and wait_time is None:
                     return None         # No proxy is working, abort!
                 elif status == 999:
                     sleep(wait_time)    # Wait until some server works
@@ -81,7 +81,7 @@ class TwitterCrawler:
 
         def get_user_tweets(self, user_id, since_id = None):
             query = 'http://api.twitter.com/1/statuses/user_timeline.xml?id=%d&exclude_replies=false&include_rts=true&include_entities=true' % user_id
-            if since_id != None:
+            if since_id is not None:
                 query = query + ('&since_id=%d' % since_id)
             return self.get_twitter_multipage_query(query)
 
@@ -93,7 +93,7 @@ class TwitterCrawler:
             result = []
             while (curr_cursor != prev_cursor):
                 (status, xmldata, wait_time) = self.requester.request("%s&cursor=%d" % (query, curr_cursor))
-                if status == 999 and wait_time == None:
+                if status == 999 and wait_time is None:
                     return None         # No proxy is working, abort!
                 elif status == 999:
                     sleep(wait_time)    # Wait until some server works
@@ -119,13 +119,13 @@ class TwitterCrawler:
 
                 # Fetch tweets and new followers
                 tweets_by_user = self.get_user_tweets(user, last_tweet_id)
-                if tweets_by_user == None:
+                if tweets_by_user is None:
                     print ('Thread %d: ABORTED CRAWLING TWEETS OF %s' % (self.ident, user))
                     self.frontier.push(user, last_tweet_id, next_crawl_time)
                     break # Abort
 
                 new_users = self.get_user_friends(user)
-                if new_users == None:
+                if new_users is None:
                     print ('Thread %d: ABORTED CRAWLING TWEETS OF %s' % (self.ident, user))
                     self.frontier.push(user, last_tweet_id, next_crawl_time)
                     break # Abort
@@ -146,7 +146,7 @@ class TwitterCrawler:
 
                     # Get the original retweeted status, if any
                     retweeted = tweet.get_retweeted_status()
-                    if retweeted != None:
+                    if retweeted is not None:
                         if retweeted.get_user_id() not in tweets_by_uid:
                             tweets_by_uid[retweeted.get_user_id()] = set([retweeted])
                         else:
@@ -162,7 +162,7 @@ class TwitterCrawler:
 
                 # Extend the frontier
                 for nu in new_users:
-                    if maxusers != None and len(self.frontier)+1 >= maxusers: break
+                    if maxusers is not None and len(self.frontier) >= maxusers: break
                     if nu not in (self.frontier) and nu != user:
                         self.frontier.push(nu, 1, get_utc_time())
 

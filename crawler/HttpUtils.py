@@ -5,7 +5,8 @@ from tornado.httpclient import AsyncHTTPClient, HTTPClient, HTTPError
 
 def http_request(url, server, port=80, timeout=20.0):
     def check_twitter_response(response):
-        return (response != None and len(response.headers.get_list('Server')) > 0 and response.headers.get_list('Server')[0] == 'tfe')
+        return (response is not None and len(response.headers.get_list('Server')) > 0 \
+                and response.headers.get_list('Server')[0] == 'tfe')
 
     def get_rate_limits(headers):
         rtime = headers.get_list('X-RateLimit-Reset')
