@@ -3,14 +3,16 @@
 
 class Tweet:
     def __init__(self, dom):
-        self.xml = b'<status>' + b''.join(node.toxml('utf-8') for node in dom.childNodes) + b'</status>'
+        self.id = None
+        self.retweeted_status = None
+        self.xml = ('<status>' + ''.join(node.toxml('utf-8') for node in dom.childNodes) + '</status>')
         self.__init_tweet_id(dom)
         self.__init_user_id(dom)
         self.__init_retweeted_id(dom)
         self.__init_replied_id(dom)
         self.__init_mentioned_ids(dom)
         self.__init_hashtags(dom)
-        self.__init_retweeted_status(dom)
+        self.__init_retweeted_status(dom)       
 
     def __eq__(self, other):
         return (other != None and self.id == other.id)
@@ -28,7 +30,6 @@ class Tweet:
         return self.id
 
     def __init_tweet_id(self, dom):
-        self.id = None
         for elem_id in dom.getElementsByTagName('id'):
             if elem_id.parentNode.tagName == 'status':
                 self.id = int(elem_id.firstChild.data)
@@ -62,15 +63,18 @@ class Tweet:
         self.hashtags = []
         for elem in dom.getElementsByTagName('hashtag'):
             if elem.parentNode.parentNode.parentNode.tagName == 'status':
-                self.hashtags.append(elem.getElementsByTagName('text')[0].firstChild.data)
+                self.hashtags.append(elem.getElementsByTagName('text')[0].firstChild.data.encode('utf-8'))
 
     def __init_retweeted_status(self, dom):
-        self.retweeted_status = None
         rt_elem = dom.getElementsByTagName('retweeted_status')
-        if len(rt_elem) > 0:
-            self.retweeted_status = rt_elem[0].cloneNode(True)
-            self.retweeted_status.tagName = 'status'
-            self.retweeted_status = Tweet(self.retweeted_status)
+        if len(rt_elem) == 0: return
+        self.retweeted_status = rt_elem[0].cloneNode(True)
+        self.retweeted_status.tagName = 'status'
+        self.retweeted_status = Tweet(self.retweeted_status)
+        print(repr(self.retweeted_status))
+        print 'p1', self.retweeted_status
+        if self.retweeted_status != None:
+            print 'p2', self.retweeted_status
 
     def get_tweet_id(self):
         return self.id
@@ -91,6 +95,7 @@ class Tweet:
         return self.hashtags
 
     def get_retweeted_status(self):
+        print self.retweeted_status
         return self.retweeted_status
 
     def get_xml(self):

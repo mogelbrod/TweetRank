@@ -13,7 +13,7 @@ from OsUtils import get_utc_time
 from EscapeXMLIllegalCharEntities import EscapeXMLIllegalCharEntities
 
 class TwitterCrawler:            
-    def __init__(self, datadir, crawl_period = 60, workers=2):
+    def __init__(self, datadir, crawl_period = 3600, workers=2):
         self.frontier = UsersFrontier(datadir + '/frontier.txt')
         self.users  = UsersWarehouse(datadir + '/users/', datadir + '/tweets/')
         self.requester = ProxiedRequester(datadir + '/proxies.txt')
@@ -52,7 +52,7 @@ class TwitterCrawler:
                 elif status != 200:
                     return []           # Query error (for instance: user has protected tweets)
                 else:
-                    domdata = parseString(EscapeXMLIllegalCharEntities(xmldata.encode('utf-8')))
+                    domdata = parseString(EscapeXMLIllegalCharEntities(xmldata))
                     tweets = domdata.getElementsByTagName('status')
                     for tweet in tweets:
                         result.append(Tweet(tweet))
@@ -71,7 +71,7 @@ class TwitterCrawler:
                 elif status != 200:
                     return []           # Query error (for instance: user has protected tweets)
                 else:
-                    domdata = parseString(EscapeXMLIllegalCharEntities(xmldata.encode('utf-8')))
+                    domdata = parseString(EscapeXMLIllegalCharEntities(xmldata))
                     tweets = domdata.getElementsByTagName('status')
                     for tweet in tweets:
                         result.append(Tweet(tweet))
@@ -127,7 +127,6 @@ class TwitterCrawler:
                     print ('Thread %d: ABORTED CRAWLING TWEETS OF %s' % (self.ident, user))
                     self.frontier.push(user, last_tweet_id, next_crawl_time)
                     break # Abort
-                    
 
                 friends = [nu for nu in new_users]
                 tweets_by_uid = {user: set([tw for tw in tweets_by_user])}
@@ -146,16 +145,19 @@ class TwitterCrawler:
                     # Get the original retweeted status, if any
                     retweeted = tweet.get_retweeted_status()
                     if retweeted != None:
-                        tl = tweets_by_uid.get(retweeted.get_user_id(), None)
-                        if tl == None: tweets_by_uid[retweeted.get_user_id()] = set([retweeted])
-                        else: tl.add(retweeted)
+                        print "%d -> %d" % (tweet.get_tweet_id(), retweeted.get_tweet_id())
+                        if retweeted.get_user_id() not in tweets_by_uid:
+                            tweets_by_uid[retweeted.get_user_id()] = set([retweeted])
+                        else:
+                            tweets_by_uid[retweeted.get_user_id()].add(retweeted)
 
                     # Extract the users mentioned
                     new_users.update(tweet.get_mentioned_ids())
 
                 # Store the crawled statuses
-                for item in tweets_by_uid.items():
-                    self.users.add_tweets_to_user(item[0], item[1])
+                for item in tweets_by_uid.iteritems():
+                    print item[0]
+                    self.users.add_user_tweets(item[0], item[1])
 
                 # Extend the frontier
                 for nu in new_users:
