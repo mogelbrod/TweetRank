@@ -21,6 +21,8 @@ blockquote:before, blockquote:after, q:before, q:after {
 
 /** Basic elements */
 
+a { color: #135; }
+
 pre {
 	white-space: pre-wrap;
 	font: normal 12px/15px monospace;
@@ -89,11 +91,11 @@ p.pagination .pages { margin: 0 8px; }
 .doc .meta {
 	padding: 2px 6px;
 	color: #000;
-	background: #aaa;
+	background: #9ab;
 }
 
-.doc .name { font-weight: bold; }
+.doc .user_nick { font-weight: bold; }
 .doc .time, .doc .hashtags { margin-left: 20px; }
-.doc .time { color: #444; }
+.doc .time { color: #345; }
 .doc .score { float: right; }
 .doc .text { padding: 4px 6px; }
