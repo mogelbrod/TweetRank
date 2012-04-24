@@ -1,6 +1,8 @@
 #!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 
+import rfc822, datetime, pytz
+
 class Tweet:
     def __init__(self, dom):
         self.xml = ('<status>' + ''.join(node.toxml('utf-8') for node in dom.childNodes) + '</status>')
@@ -18,6 +20,7 @@ class Tweet:
         self._init_friends_count(dom)
         self._init_statuses_count(dom)
         self._init_retweeted_count(dom)
+        self._init_date(dom)
 
     def __eq__(self, other):
         return (other is not None and self.id == other.id)
@@ -119,6 +122,17 @@ class Tweet:
         for elem in dom.getElementsByTagName('retweet_count'):
             if elem.parentNode.tagName == 'status':
                 self.retweeted_count = int(elem.firstChild.data)
+
+    def _init_date(self, dom):
+        self.date = None
+        for elem in dom.getElementsByTagName('created_at'):
+            if elem.parentNode.tagName == 'status':
+                self.date = elem.firstChild.data
+
+        if self.date is not None:
+            self.date = rfc822.parsedate_tz(self.date)
+            self.date = datetime.datetime(self.date[0], self.date[1], self.date[2],
+                                          self.date[3], self.date[4], self.date[5], 0, pytz.utc)
         
     def get_tweet_id(self):
         return self.id
@@ -161,6 +175,9 @@ class Tweet:
 
     def get_text(self):
         return self.text
+
+    def get_date(self):
+        return self.date
 
     def get_xml(self):
         return self.xml
