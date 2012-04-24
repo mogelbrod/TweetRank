@@ -22,45 +22,49 @@ class RankerNotifier:
 
     def add_retweet(self, tweet_id, retweeted_id):
         """This method tells the ranker that `tweet_id' is a retweet of `retweeted_id'"""
-        body = "ID: %d\nRefID: %d\n" % (tweet_id, retweeted_id)
-        request = HTTPRequest('http://%s:%d/RT'%(self.host, self.port),method='POST', body=body)
+        body = "TYPE=RT&ID=%d&RefID=%d\n" % (tweet_id, retweeted_id)
+        request = HTTPRequest('http://%s:%d/'%(self.host, self.port),method='POST',body=body)
         return self._sendRequest(request)
 
     def add_reply(self, tweet_id, replied_id):
         """This method tells the ranker that `tweet_id' is a reply to `replied_id'"""
-        body = "ID: %d\nRefID: %d\n" % (tweet_id, replied_id)
-        request = HTTPRequest('http://%s:%d/RP'%(self.host, self.port),method='POST', body=body)        
+        body = "TYPE=RP&ID=%d&RefID=%d\n" % (tweet_id, replied_id)
+        request = HTTPRequest('http://%s:%d/'%(self.host, self.port),method='POST',body=body)        
         return self._sendRequest(request)
 
     def add_mentions(self, tweet_id, mentioned_user_ids):
         """This method tells the ranker that `tweet_id' mentioned users in `mentioned_user_ids'"""
-        body = 'ID: %d\n' % tweet_id
+        body = 'TYPE=MN&ID=%d' % tweet_id
         for uid in mentioned_user_ids:
-            body = body + ('RefID: %d\n' % uid)
-        request = HTTPRequest('http://%s:%d/MN'%(self.host, self.port),method='POST', body=body)
+            body = body + ('&RefID=%d' % uid)
+        body = body + '\n'
+        request = HTTPRequest('http://%s:%d/'%(self.host, self.port),method='POST',body=body)
         return self._sendRequest(request)
 
     def add_following(self, user_id, followed_user_ids):
         """This method tells the ranker that `user_id' is following users in `followed_user_ids'"""
-        body = 'ID: %d\n' % user_id
+        body = 'TYPE=FW&ID=%d' % tweet_id
         for uid in followed_user_ids:
-            body = body + ('RefID: %d\n' % uid)
-        request = HTTPRequest('http://%s:%d/FW'%(self.host, self.port),method='POST', body=body)
+            body = body + ('&RefID=%d' % uid)
+        body = body + '\n'
+        request = HTTPRequest('http://%s:%d/'%(self.host, self.port),method='POST',body=body)
         return self._sendRequest(request)
 
     def add_user_tweets(self, user_id, tweet_ids):
         """This method tells the ranker that `user_id' is the author of tweets in `tweet_ids'"""
-        body = 'ID: %d\n' % user_id
+        body = 'TYPE=TW&ID=%d' % user_id
         for tid in tweet_ids:
-            body = body + ('RefID: %d\n' % tid)
-        request = HTTPRequest('http://%s:%d/TW'%(self.host, self.port),method='POST', body=body)
+            body = body + ('&RefID=%d' % uid)
+        body = body + '\n'
+        request = HTTPRequest('http://%s:%d/'%(self.host, self.port),method='POST',body=body)
         return self._sendRequest(request)
 
     def add_tweet_hashtags(self, tweet_id, hashtags):
         """This method tells the ranker that `tweet_id' contained the hashtags in `hashtags'"""
-        body = 'ID: %d\n' % tweet_id
+        body = 'TYPE=HT&ID=%d' % tweet_id
         for ht in hashtags:
-            body = body + ('RefID: %s\n' % ht)
-        request = HTTPRequest('http://%s:%d/HT'%(self.host, self.port),method='POST', body=body)
+            body = body + ('&RefID=%s' % ht)
+        body = body + '\n'
+        request = HTTPRequest('http://%s:%d/'%(self.host, self.port),method='POST',body=body)
         return self._sendRequest(request)
 
