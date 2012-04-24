@@ -21,18 +21,20 @@ class RequestHandler implements HttpHandler {
 	String body_line;
 
 	while ( (body_line = br.readLine()) != null ) {
-	    body_line = body_line.trim();
-	    if(body_line.equals("")) continue;
+	    body_line = body_line.toLowerCase();
+	    String[] parts = body_line.split("&");
+	    for(int i = 0; i < parts.length; ++i) {
+		String[] parameter = parts[i].split("=");
+		if (parameter.length != 2 || parameter[0].length() == 0 || parameter[1].length() == 0)
+		    throw new Exception("Bad parameters.");
 
-	    String[] parameter = body_line.split(":");
-	    if (parameter.length != 2 || parameter[0].length() == 0 || parameter[1].length() == 0)
-		throw new Exception("Bad parameters.");
-	    
-	    parameter[0] = parameter[0].toUpperCase();
-	    ArrayList<String> values = params.get(parameter[0]);
-	    if ( values == null ) values = new ArrayList<String>();
-	    values.add(parameter[1]);
-	    params.put(parameter[0], values);
+		parameter[0] = parameter[0].toUpperCase();
+		ArrayList<String> values = params.get(parameter[0]);
+		if ( values == null ) values = new ArrayList<String>();
+		values.add(parameter[1]);
+		params.put(parameter[0], values);
+      
+	    }
 	}
 	return params;
     }
