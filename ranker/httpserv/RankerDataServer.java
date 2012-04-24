@@ -3,7 +3,6 @@ import java.net.InetSocketAddress;
 
 import com.sun.net.httpserver.HttpServer;
 
-
 public class RankerDataServer {
     public static final int PORT = 4711;
     private HttpServer server;

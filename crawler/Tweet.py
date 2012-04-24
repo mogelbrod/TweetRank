@@ -10,7 +10,14 @@ class Tweet:
         self._init_replied_id(dom)
         self._init_mentioned_ids(dom)
         self._init_hashtags(dom)
-        self._init_retweeted_status(dom)       
+        self._init_retweeted_status(dom)
+        self._init_text(dom)
+        self._init_user_nick(dom)
+        self._init_user_name(dom)
+        self._init_followers_count(dom)
+        self._init_friends_count(dom)
+        self._init_statuses_count(dom)
+        self._init_retweeted_count(dom)
 
     def __eq__(self, other):
         return (other is not None and self.id == other.id)
@@ -71,6 +78,48 @@ class Tweet:
         self.retweeted_status.tagName = 'status'
         self.retweeted_status = Tweet(self.retweeted_status)
 
+    def _init_text(self, dom):
+        self.text = None
+        for elem_text in dom.getElementsByTagName('text'):
+            if elem_text.parentNode.tagName == 'status':
+                self.text = elem_text.firstChild.data
+
+    def _init_user_nick(self, dom):
+        self.user_nick = None
+        for elem in dom.getElementsByTagName('screen_name'):
+            if elem.parentNode.tagName == 'user' and elem.parentNode.parentNode.tagName == 'status':
+                self.user_nick = elem.firstChild.data
+
+    def _init_user_name(self, dom):
+        self.user_name = None
+        for elem in dom.getElementsByTagName('name'):
+            if elem.parentNode.tagName == 'user' and elem.parentNode.parentNode.tagName == 'status':
+                self.user_name = elem.firstChild.data
+
+    def _init_followers_count(self, dom):
+        self.followers_count = None
+        for elem in dom.getElementsByTagName('followers_count'):
+            if elem.parentNode.tagName == 'user' and elem.parentNode.parentNode.tagName == 'status':
+                self.followers_count = int(elem.firstChild.data)
+
+    def _init_friends_count(self, dom):
+        self.friends_count = None
+        for elem in dom.getElementsByTagName('friends_count'):
+            if elem.parentNode.tagName == 'user' and elem.parentNode.parentNode.tagName == 'status':
+                self.friends_count = int(elem.firstChild.data)
+
+    def _init_statuses_count(self, dom):
+        self.statuses_count = None
+        for elem in dom.getElementsByTagName('statuses_count'):
+            if elem.parentNode.tagName == 'user' and elem.parentNode.parentNode.tagName == 'status':
+                self.statuses_count = int(elem.firstChild.data)
+
+    def _init_retweeted_count(self, dom):
+        self.retweeted_count = None
+        for elem in dom.getElementsByTagName('retweet_count'):
+            if elem.parentNode.tagName == 'status':
+                self.retweeted_count = int(elem.firstChild.data)
+        
     def get_tweet_id(self):
         return self.id
         
@@ -92,5 +141,28 @@ class Tweet:
     def get_retweeted_status(self):
         return self.retweeted_status
 
+    def get_user_nick(self):
+        return self.user_nick
+
+    def get_user_name(self):
+        return self.user_name    
+
+    def get_followers_count(self):
+        return self.followers_count
+
+    def get_friends_count(self):
+        return self.friends_count
+
+    def get_statuses_count(self):
+        return self.statuses_count
+
+    def get_retweeted_count(self):
+        return self.retweeted_count
+
+    def get_text(self):
+        return self.text
+
     def get_xml(self):
         return self.xml
+
+
