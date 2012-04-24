@@ -21,20 +21,18 @@ class RequestHandler implements HttpHandler {
 	String body_line;
 
 	while ( (body_line = br.readLine()) != null ) {
-	    body_line = body_line.toLowerCase();
-	    String[] parts = body_line.split("&");
-	    for(int i = 0; i < parts.length; ++i) {
-		String[] parameter = parts[i].split("=");
-		if (parameter.length != 2 || parameter[0].length() == 0 || parameter[1].length() == 0)
-		    throw new Exception("Bad parameters.");
+	    body_line = body_line.trim();
+	    if(body_line.equals("")) continue;
 
-		parameter[0] = parameter[0].toUpperCase();
-		ArrayList<String> values = params.get(parameter[0]);
-		if ( values == null ) values = new ArrayList<String>();
-		values.add(parameter[1]);
-		params.put(parameter[0], values);
-      
-	    }
+	    String[] parameter = body_line.split(":");
+	    if (parameter.length != 2 || parameter[0].length() == 0 || parameter[1].length() == 0)
+		throw new Exception("Bad parameters.");
+	    
+	    parameter[0] = parameter[0].toUpperCase();
+	    ArrayList<String> values = params.get(parameter[0]);
+	    if ( values == null ) values = new ArrayList<String>();
+	    values.add(parameter[1]);
+	    params.put(parameter[0], values);
 	}
 	return params;
     }
@@ -42,6 +40,7 @@ class RequestHandler implements HttpHandler {
     /** This method is used to send a Bad Reponse to the client. */
     private void sendBadRequestResponse(HttpExchange t, String message) {
 	try {
+	    System.err.println(message);
 	    t.sendResponseHeaders(400, message.length());
 	    t.getResponseBody().write(message.getBytes());
 	    t.getResponseBody().close();
@@ -75,12 +74,13 @@ class RequestHandler implements HttpHandler {
 	// /RT (Retweet relationship) -> Tweet 'ID' is a retweet of tweet 'RefID'
 	// /RP (Reply relationship)   -> Tweet 'ID' is a reply to tweet 'RefID'
 	// /MN (Mention relationship) -> Tweet 'ID' mentions users in the list ['RefID']
+	// /HT (Hashtags relationship)-> Tweet 'ID' mentions hashtags in the list ['RefID']
 	// /FW (Follow relationship)  -> User 'ID' follows users in the list ['RefID']
 	// /TW (Tweets relationship)  -> User 'ID' is the author of tweets in the list ['RefID']
 	String action = t.getRequestURI().toString().toUpperCase();
 	if ( !action.equals("/RT") && !action.equals("/RP") && !action.equals("/MN") &&
-	     !action.equals("/FW") && !action.equals("/TW") ) {
-	    sendBadRequestResponse(t, "Only [RT|RP|MN|FW|TW] actions valid.");
+	     !action.equals("/FW") && !action.equals("/TW") && !action.equals("/HT") ) {
+	    sendBadRequestResponse(t, "Only [RT|RP|MN|FW|TW|HT] actions valid.");
 	    return;
 	}
 
@@ -120,12 +120,15 @@ class RequestHandler implements HttpHandler {
 	} else if ( action.equals("/FW") ) {
 	    //String user_id = ID_values.get(0);
 	    //ArrayList<String> ref_user_ids = RefID_values;
-	} else {
+	} else if ( action.equals("/TW") ) {
 	    //String user_id = ID_values.get(0);
 	    //ArrayList<String> ref_tweet_ids = RefID_values;
-	}
+	} else {
+	    //String tweet_id = ID_values.get(0);
+	    //ArrayList<String> hashtags = RefID_values;
+        }
 
 	// Send OK response.
-	sendOKResponse(t, "");
+	sendOKResponse(t, "OK!");
     }
 }
