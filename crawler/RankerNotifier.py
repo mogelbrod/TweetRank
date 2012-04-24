@@ -43,7 +43,7 @@ class RankerNotifier:
 
     def add_following(self, user_id, followed_user_ids):
         """This method tells the ranker that `user_id' is following users in `followed_user_ids'"""
-        body = 'TYPE=FW&ID=%d' % tweet_id
+        body = 'TYPE=FW&ID=%d' % user_id
         for uid in followed_user_ids:
             body = body + ('&RefID=%d' % uid)
         body = body + '\n'
