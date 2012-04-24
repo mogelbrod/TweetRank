@@ -7,3 +7,5 @@ doc/tweetrank_draft/*
 doc/tweetrank_draft/tweetrank_draft.tex
 
 crawler/__pycache__
+crawler/*.pyc
+crawler/*.log
