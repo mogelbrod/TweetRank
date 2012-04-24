@@ -796,9 +796,6 @@
        names (and different init parameters)
     -->
 
-	<!-- Request handler for updating the flat file (external file field !-->
-	<requestHandler name="/reloadCache" class="org.apache.solr.search.function.FileFloatSource$ReloadCacheRequestHandler" />
-
   <requestHandler name="/browse" class="solr.SearchHandler">
      <lst name="defaults">
        <str name="echoParams">explicit</str>
@@ -814,18 +811,22 @@
        <str name="q.alt">*:*</str>
        <str name="rows">10</str>
        <str name="fl">*,score</str>
+
+       <str name="qf">
+          hashtag^2  user_nick^2 text insensitive_text^1.5
+       </str>
+			 <str name="bf">
+					pow(retweet_count,0.1) rank^2
+					recip(ms(NOW/HOUR,created_at),3.16e-11,0.08,0.05)
+       </str>
+
+			 <!--
        <str name="mlt.qf">
          text^0.5 hashtag^2
        </str>
        <str name="mlt.fl">text</str>
        <int name="mlt.count">3</int>
-
-       <str name="qf">
-          hashtag^2 text user_nick^2 insensitive_text^1.5
-       </str>
-       <str name="bf">sqrt(retweet_count) rank^2
-        recip(ms(NOW/HOUR,created_at),3.16e-11,0.08,0.05)
-       </str>
+			 -->
      </lst>
      <arr name="last-components">
        <str>spellcheck</str>
@@ -834,6 +835,10 @@
      <str name="url-scheme">httpx</str>
      -->
   </requestHandler>
+
+	<!-- Request handler for updating the flat file (external file field !-->
+	<requestHandler name="/reloadCache" class="org.apache.solr.search.function.FileFloatSource$ReloadCacheRequestHandler" />
+
   <requestHandler name="/dataimport" class="org.apache.solr.handler.dataimport.DataImportHandler">
       <lst name="defaults">
         <str name="config">twitter-data-config.xml</str>
@@ -855,8 +860,7 @@
     -->
 
  
-  <requestHandler name="/update" 
-                  class="solr.XmlUpdateRequestHandler">
+  <requestHandler name="/update" class="solr.XmlUpdateRequestHandler">
     <!-- See below for information on defining 
          updateRequestProcessorChains that can be used by name 
          on each Update Request
@@ -866,16 +870,12 @@
          <str name="update.chain">dedupe</str>
        </lst>
        -->
-    
-      <lst name="defaults">
-        <str name="config">twitter-data-config.xml</str>
-      </lst>
-    </requestHandler>
+	</requestHandler>
+
   <!-- Binary Update Request Handler
        http://wiki.apache.org/solr/javabin
     -->
-  <requestHandler name="/update/javabin" 
-                  class="solr.BinaryUpdateRequestHandler" />
+  <requestHandler name="/update/javabin" class="solr.BinaryUpdateRequestHandler" />
 
   <!-- CSV Update Request Handler
        http://wiki.apache.org/solr/UpdateCSV
@@ -890,8 +890,6 @@
   <requestHandler name="/update/json" 
                   class="solr.JsonUpdateRequestHandler" 
                   startup="lazy" >
-
-
   </requestHandler>
 
   <!-- Solr Cell Update Request Handler
