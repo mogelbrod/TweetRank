@@ -8,10 +8,6 @@
 			debug
 		</label>
 	</div>
-	#if($params.getBool("debugQuery",false))
-		<a href="#" onclick="jQuery(this).next('pre').toggle(); return false;">toggle parsed query</a>
-		<pre style="display:none">$response.response.debug.parsedquery</pre>
-	#end
 
 	#if($annotate == true)
 		<input type="hidden" name="annotateBrowse" value="true"/>

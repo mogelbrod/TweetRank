@@ -36,6 +36,7 @@ html {
 #header {
 	padding: 10px 6px;
 	border-bottom: 2px solid #999;
+	overflow: auto;
 }
 #header h1 {
 	float: left;
@@ -43,10 +44,24 @@ html {
 	font: bold 24px/30px Arial, sans-serif;
 }
 #header h1 a { text-decoration: none; }
+#query-form { float: left; }
 #query-form .inputs { margin-top: 4px; }
 #q {
 	width: 300px;
 	font: normal 16px/20px Arial, sans-serif;
+}
+
+#header #toggle-debug, #header .num-results {
+	float: right;
+	margin: 10px 10px 0 10px;
+}
+#header #toggle-debug { float: left; }
+
+#debug-query {
+	display: block
+	margin: 10px 5px 2px;
+	clear: both;
+	display: none;
 }
 
 #content {
@@ -54,6 +69,9 @@ html {
 }
 
 .field .name { font-weight: bold; }
+
+p.pagination { text-align: center; }
+p.pagination .pages { margin: 0 8px; }
 
 /** Results */
 

@@ -24,9 +24,26 @@
 	<div id="header">
 		<h1><a href="#url_for_home#if($request.params.get('debugQuery'))?debugQuery=true#end">TweetRank</a></h1>
 		#parse('form.vm')
+
+		<p class="num-results">
+		#if($response.response.get('grouped'))
+				<strong>$response.response.get('grouped').size() group(s)</strong>
+				found in ${response.responseHeader.QTime} ms
+		#else
+				<strong>$page.results_found</strong>
+				results found in ${response.responseHeader.QTime} ms
+		#end
+		</p>
+
+		#if($params.getBool("debugQuery",false))
+			<a href="#" id="toggle-debug" onclick="jQuery('\#debug-query').toggle(); return false;">toggle parsed query</a>
+			<pre id="debug-query">$response.response.debug.parsedquery.replace(' ', '
+	')</pre>
+		#end
 	</div>
 	<div id="content">
 		$content
 	</div>
 </body>
 </html>
+
