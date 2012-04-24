@@ -131,12 +131,25 @@
 #macro(field $f)
 #if($response.response.highlighting.get($docId).get($f).get(0))
 $!response.response.highlighting.get($docId).get($f).get(0)
+#elseif($doc.getFieldValues($f) && $doc.getFieldValues($f).size() > 0)
+#display_value($doc.getFieldValues($f))##
+#end
+#end
+
+#macro(display_value $val)
+#if(${val.class.name} == "java.util.ArrayList")
+#foreach($v in $val)
+#if(${v.class.name} == "java.util.Date")
+$date.format("yyyy-MM-dd HH:mm:ss",$v,$date.getLocale(),$date.getTimeZone().getTimeZone("UTC"))##
 #else
-#foreach($v in $doc.getFieldValues($f))
-$v ##
+$v##
+#end
+#if($val.size() > 1) #end
+#end
+#else
+$val##
 #end
 #end
-#end  
 
 #macro(utc_date $theDate)
 $date.format("yyyy-MM-dd'T'HH:mm:ss'Z'",$theDate,$date.getLocale(),$date.getTimeZone().getTimeZone("UTC"))##

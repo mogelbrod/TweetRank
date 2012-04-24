@@ -1,7 +1,7 @@
 <div class="hit">
 	<div class="meta">
-		<a class="name" href="http://twitter.com/#field('user_name')">#field('user_nick')</a>
-		<span class="time">#field('created_at')</span>
+		<a class="name" href="http://twitter.com/#field('user_nick')">#field('user_name')</a>
+		<a class="time" href="http://twitter.com/#field('user_nick')/status/#field('id')">#field('created_at')</a>
 		<span class="hashtags">#field('hashtag')</span>
 		<span class="score">#field('score')</span>
 		<span class="rank">#field('rank')</span>

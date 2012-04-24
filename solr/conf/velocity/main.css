@@ -94,5 +94,6 @@ p.pagination .pages { margin: 0 8px; }
 
 .doc .name { font-weight: bold; }
 .doc .time, .doc .hashtags { margin-left: 20px; }
+.doc .time { color: #444; }
 .doc .score { float: right; }
 .doc .text { padding: 4px 6px; }
