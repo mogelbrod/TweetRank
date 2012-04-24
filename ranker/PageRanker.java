@@ -15,7 +15,7 @@ public class PageRanker {
 	private Hashtable<String, List<String>> userTweets = new Hashtable<String, List<String>>();
 	
 	/** Contains all tweets */
-	private ArrayList<String> tweets;
+	private ArrayList<String> tweets = new ArrayList<String>();
 		
 	/** Maps a tweet to a list of user mentions */
 	private Hashtable<String, List<String>> mentioned = new Hashtable<String, List<String>>();
