@@ -1,7 +1,7 @@
 
 import java.util.*;
 
-public class PageRanker {
+public class TweetRanker {
 
 	/*probabilities (15% for each to happen right now, should probably be changed!)*/
 	private final double RANDOM_JUMP = 0.15;
@@ -15,7 +15,7 @@ public class PageRanker {
 	private Hashtable<String, List<String>> userTweets = new Hashtable<String, List<String>>();
 	
 	/** Contains all tweets */
-	private ArrayList<String> tweets = new ArrayList<String>();
+	private HashSet<String> tweets = new HashSet<String>();
 		
 	/** Maps a tweet to a list of user mentions */
 	private Hashtable<String, List<String>> mentioned = new Hashtable<String, List<String>>();
@@ -27,32 +27,39 @@ public class PageRanker {
 	private Hashtable<String, String> refTweets = new Hashtable<String, String>();
 	
 	public void computePageRank() {
-		int n = tweets.size();
-		int m = n/10;
-		MCCompletePath(n, m);
+	    int n = tweets.size();
+	    int m = n/10;
+	    MCCompletePath(n, m);
 	}
 	
-	public void parseTweets(String tweetString) {
+        /*public void parseTweets(String tweetString) {
 		Collections.addAll(tweets, tweetString.split(","));
-	}
+	}*/
 	
-	public void parseRefTweets(String tweetID, String refTweetID) {
+	public void addRefTweets(String tweetID, String refTweetID) {
 		refTweets.put(tweetID, refTweetID);
+		tweets.add(tweetID);
+		tweets.add(refTweetID);
 	}
 	
-	public void parseUserTweets(String userID, String tweetString) {
-		List<String> l = Arrays.asList(tweetString.split(","));
-		userTweets.put(userID, l);
+	public void addUserTweets(String userID, List<String> tweetIDs) {
+	    List<String> curr_list = userTweets.get(userID);
+	    if (curr_list == null)
+		userTweets.put(userID, tweetIDs);
+	    else {
+		curr_list.addAll(tweetIDs);
+		//userTweets.put(userID, curr_list);
+	    }
 	}
 	
-	public void parseMentioned(String tweetID, String userString) {
-		List<String> l = Arrays.asList(userString.split(","));
-		mentioned.put(tweetID, l);
+	public void addMentioned(String tweetID, List<String> userIDs) {
+	    //List<String> l = Arrays.asList(userString.split(","));
+	    //mentioned.put(tweetID, l);
 	}
 	
-	public void parseFollows(String userID, String userString) {
-		List<String> l = Arrays.asList(userString.split(","));
-		follows.put(userID, l);
+	public void addFollows(String userID, List<String> userIDs) {
+	    //List<String> l = Arrays.asList(userString.split(","));
+	    //	follows.put(userID, l);
 	}
 	
 	private void addVisit(String tweetID) {
