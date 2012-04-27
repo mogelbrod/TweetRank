@@ -30,7 +30,7 @@ $R_{i,j}$ is usually set to $\frac{1}{|W|}$, meaning that all the web pages are 
 This simple definition is not enough powerful in the case the Twitter world. PageRank relies on the fact that web pages are visited mainly by following hyperlinks, but this is not true for tweets. Tweets are not usually visited by following the equivalence of hyperlinks, but in many other ways. So, TweetRank adapts and extends the definition of PageRank to consider not only direct links between tweets but other ways to access a tweet.
 
 \section{Twitter concepts}
-Twitter is a social network that allows users to send and read short messages called \emph{tweets}. There are many ways of interaction in Twitter: users can \emph{follow} other users and are notified about the posts from these \emph{followed} users, users can \emph{mention} other users on their tweets, they can re-post a tweet from an other user (\emph{retweet}) or they can \emph{reply} to a certain tweet. Given that concepts, we define the following matrices representing the different relationships. \\
+Twitter is a social network that allows users to send and read short messages called \emph{tweets}. There are many ways of interaction in Twitter: users can \emph{follow} other users and are notified about the posts from these \emph{followed} users, users can \emph{mention} other users on their tweets, they can re-post a tweet from an other user (\emph{retweet}) or they can \emph{reply} to a certain tweet. Additionally, a tweet can mention several \emph{hashtags}, which are usually used to designate the topic that the tweet is talking about (for instance: \emph{\#politics}, \emph{\#Twitter} or \emph{\#ChampionsLeague}). Given that concepts, we define the following matrices representing the different relationships. \\
 
 
 
@@ -68,7 +68,17 @@ FW_{i,j} = \begin{cases}
 0 & \text{otherwise}
 \end{cases}
 \end{equation}
-Note that $f_i = \sum_{j \in U} FW_{i,j}$ is equal to the number of users followed by user $i$.
+Note that $f_i = \sum_{j \in U} FW_{i,j}$ is equal to the number of users followed by user $i$. \\
+
+
+The matrix $HT$ describes the relationship among tweets and hashtags. $FW$ is a $|T| \times |HS|$ matrix, where $HS$ is the set of hashtags.
+\begin{equation}
+HT_{i,j} = \begin{cases}
+1 & \text{if tweet } i \text{ includes hashtag } j \\
+0 & \text{otherwise}
+\end{cases}
+\end{equation}
+Note that $th_i = \sum_{j \in HS} HT_{i,j}$ is equal to the number of hashtags included in tweet $i$ (row sum). Similarly, $ht_j = \sum_{i \in |T|} HT_{i,j}$ is the number of tweets that used the hashtag $j$ (column sum).
 
 \section{Algorithm}
 Our proposed algorithm also defines the relevance of a tweet as the largest real eigenvector of a matrix $G'$, as PageRank did. However, our matrix will take into account not only the direct relations between tweets (retweets and replies) but all the previous concepts.
@@ -79,14 +89,15 @@ The idea is that a tweet $j$ can be accessed from a tweet $i$ by:
 \item A retweet or reply. $L_{i,j}$ is equal to the probability of access tweet $j$ following a retweet or reply on tweet $i$.
 \item A user mention. $M_{i,j}$ is equal to the probability of access tweet $j$ by following a mention on tweet $i$.
 \item A followed user. $F_{i,j}$ is equal to the probability of access tweet $j$ by accessing the owner of tweet $j$ from the following list of the user owner of tweet $i$.
+\item A common hashtag. $H_{i,j}$ is equal to the probability of access tweet $j$ by accessing one of the hashtags of tweet $i$ and then accessing to one of the tweets that also included that hashtag.
 \end{itemize}
 
 Given that, we define the elements in $G'$ as:
 \begin{equation}\label{eq:tweetrank}
-G'_{i,j} = \alpha R_{i,j} + \beta L_{i,j} + \gamma M_{i,j} + \delta F_{i,j} 
+G'_{i,j} = \alpha R_{i,j} + \beta L_{i,j} + \gamma M_{i,j} + \delta F_{i,j} + \epsilon H_{i,j}
 \end{equation}
 
-The parameters $\alpha$, $\beta$, $\gamma$, $\delta$ must be chosen such that  $\alpha + \beta + \gamma + \delta = 1$
+The parameters $\alpha$, $\beta$, $\gamma$, $\delta$, $\epsilon$ must be chosen such that  $\alpha + \beta + \gamma + \delta + \epsilon = 1$
 
 \subsubsection*{Computing $L_{i,j}$}
 \begin{equation}
@@ -130,18 +141,37 @@ Note that $|t \in T : u_t = u_j|$ is just the number of tweets of user $u_j$. Ea
 
 This means that the user visited a random user profile followed by the owner of tweet $i$, and the visited a random tweet of that user. 
 
+\subsubsection*{Computing $H_{i,j}$}
+First, let's define the probability that a tweet $j$ is visited from tweet $i$, using the hashtag $k$. Remember that $ht_k$ denotes the number of tweets that use the hashtag $k$ and $th_i$ denotes the number of hashtags that are included in tweet $i$.
+
+\begin{equation}
+HP_{i,j,k} = \begin{cases}
+\left( \frac{ HT_{j,k} }{ ht_k } \right) \cdot \left( \frac{ HT_{i,k} }{ th_i } \right) & \text{if } ht_k > 0 \wedge th_i > 0 \\
+0 & \text{otherwise}
+\end{cases}
+\end{equation}
+
+Note that $HP_{i,j,k}$ will be greater than zero if, and only if, both $i$ and $j$ included the hashtag $k$. 
+
+Once we have computed $HP_{i,j,k}$, we can compute $H_{i,j}$ as:
+\begin{equation}
+H_{i,j} = \frac{\sum^{|HS|}_{k} HP_{i,j,k}}{ \sum^{|T|}_j \sum^{|HS|}_{k} HP_{i,j,k}}
+\end{equation}
+
+The previous equation might be complex but note that the numerator is just the sum of the third-dimension of the $HP$ matrix, for a given pair of tweets $i, j$, and the denominator is just the normalization term, so that row $i$ in matrix $H$ sums 1.
+
 
 \section{Probability weighting using \emph{hashtags}}
-An extension of the previous definition of $G'$ could take into account some measure of similarity between users. Our idea is that users that share common interests would rank higher tweets from users with similar interests. We propose to use the \emph{hashtag} concept on Twitter to measure what a user talks about.
+An extension of the previous definition of $G'$ could take into account some measure of similarity between users. Our idea is that users that share common interests would rank higher tweets from users with similar interests. We propose to use the \emph{hashtag} concept on Twitter to measure what a user talks about. However, as we will discuss later, this extension is not so easy to implement as the basic algorithm described before.
 
 \subsubsection*{Hashtag similarity}
 
-The matrix $H$ represents the relation among users and hashtags, that is, wich hashtags are used (and how many times) by each user. So, $H$ is defined as it follows.
+The matrix $HT'$ represents the relation among users and hashtags, that is, wich hashtags are used (and how many times) by each user. So, $HT'$ is defined as it follows.
 \begin{equation}
-H_{i,j} = \text{Number of times that user } i \text{ uses the hashtag } j
+HT'_{i,j} = \text{Number of times that user } i \text{ uses the hashtag } j
 \end{equation}
 
-Each row $i$ in the matrix $H$ represents a feature vector $\vec{h}_i$ of the user $i$. We can define the similarity between two users $i$ and $j$ in terms of \emph{hashtags} as the cosine of the angle formed by the vectors $\vec{h}_i$ and $\vec{h}_j$.
+Each row $i$ in the matrix $HT'$ represents a feature vector $\vec{h}_i$ of the user $i$. We can define the similarity between two users $i$ and $j$ in terms of \emph{hashtags} as the cosine of the angle formed by the vectors $\vec{h}_i$ and $\vec{h}_j$.
 \begin{equation}
 d_{i,j} = \frac{\vec{h}_i \cdot \vec{h}_j}{ |\vec{h}_i| \cdot |\vec{h}_j|}
 \end{equation}
@@ -149,13 +179,13 @@ d_{i,j} = \frac{\vec{h}_i \cdot \vec{h}_j}{ |\vec{h}_i| \cdot |\vec{h}_j|}
 \subsubsection*{$G'$ extension to $G''$}
 $G'$ can be also expressed in a terms of a matrix $Z$.
 \begin{equation}
-G' = \alpha R + \beta L + \gamma M + \delta F =   \alpha R + (1-\alpha) Z
+G' = \alpha R + \beta L + \gamma M + \delta F + \epsilon H =   \alpha R + (1-\alpha) Z
 \end{equation}
 Where $Z$ is defined as:
 \begin{equation}
-Z = \beta' L + \gamma' M + \delta' F 
+Z = \beta' L + \gamma' M + \delta' F + \epsilon' H 
 \end{equation}
-Where $\beta' = \frac{\beta}{1-\alpha}$, $\gamma' = \frac{\gamma}{1-\alpha}$, $\delta' = \frac{\delta}{1-\alpha}$ and $\beta' + \gamma' + \delta' = 1$. \\
+Where $\beta' = \frac{\beta}{1-\alpha}$, $\gamma' = \frac{\gamma}{1-\alpha}$, $\delta' = \frac{\delta}{1-\alpha}, \epsilon' = \frac{\epsilon}{1 - \alpha}$ and $\beta' + \gamma' + \delta' + \epsilon'= 1$. \\
 
 Given that, we extended the definition of $G'$ and $Z$ to take into account the similarity between two users defined before. 
 \begin{equation}
@@ -172,11 +202,18 @@ And finally, the weighted-probability of visiting the tweet $j$ from tweet $i$ w
 G'' = \alpha R + (1 - \alpha) Z''
 \end{equation}
 
+\subsubsection*{Disadvantages of the probability weighting}
+This extension presents an important disadvantage when we use a Monte Carlo method to compute the eigenvector with the largest real eigenvalue of matrix $G''$. Using a Monte Carlo method, we don't need to compute the matrix $G''$ in order to compute its eigenvector. Using the relations $MN$, $RT$, $RP$, $FW$ and $HT$ and picking elements uniform-randomly from those relations, an approximation of the eigenvector can be computer. The disadvantage introduced by using this extension is that the elements cannot be chosen uniformly, but they must be chosen following a probability proportional to the distance measure that we have defined. \\
+
+An other problem of this approach is that assumes that users would rank higher tweets from other users with similar interests. And this assumption might no be true, for instance when discussing about politics: it seems unlikely that a conservative member would rank higher tweets from progressive users. Even if they share the same hashtags, probably the opinion expressed in them will be very different. \\
+
+Implementing this extension would increase the time complexity of our algorithm, so we decided not to implement it, although we decided to discuss the benefits and problems of this approach in this report.
+
 \section{Summary}
-We adapted the definition of PageRank to fit in the Twitter context where direct references among tweets (retweets or replies) are not the usual way to navigate through Twitter. We proposed to take into account also mentions and followers to determine the importance of a tweet. \\
+We adapted the definition of PageRank to fit in the Twitter context where direct references among tweets (retweets or replies) are not the usual way to navigate through Twitter. We proposed to take into account also mentions, followers and hashtags to determine the importance of a tweet. \\
 
-Finally, we considered an extension of the TweetRank which considers the similarity between users in terms of common hashtags. We proposed that references between tweets whose owners have similar interests should be more important than references between tweets whose owners do not have so many common interests. The original idea of a random surfer is not valid any more because the probabilities are weighted depending on the users, but can be a good way to take into account the users profiles. \\
+Finally, we considered an extension of the TweetRank which considers the similarity between users in terms of common hashtags. We proposed that references between tweets whose owners have similar interests should be more important than references between tweets whose owners do not have so many common interests. We did not implement this extension mainly because the time complexity of our algorithm would increase too much. \\
 
-Our task now is to design an efficient algorithm able to compute the largest real eigenvalue for the matrix $G''$. The algorithm should be able to compute the TweetRank dynamically since Twitter is a dynamic environment where millions of tweets are published each second. We are working on the design of this algorithm as well as the additional infrastructure required to build a search engine able to search for tweets, using our algorithm. Once we have built this infrastructure, we will have to choose the optimal values for the parameters described above ($\alpha, \beta, \gamma, \delta, k$).
+Our task now is to design an efficient algorithm able to compute the largest real eigenvalue for the matrix $G'$. The algorithm should be able to compute the TweetRank dynamically since Twitter is a dynamic environment where millions of tweets are published each second. We are working on the design of this algorithm as well as the additional infrastructure required to build a search engine able to search for tweets, using our algorithm. Once we have built this infrastructure, we will have to choose the optimal values for the parameters described above ($\alpha, \beta, \gamma, \delta, \epsilon$).
 
 \end{document}
