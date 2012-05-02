@@ -63,8 +63,6 @@ public class MegaGraph {
 	}
 
 	private MegaMap loadOrCreateMegaMap(String name) throws MegaMapException {
-		MegaMap map = manager.getMegaMap(name);
-		if (map != null) return map;
 		return manager.createMegaMap(name, true, false);
 	}
 
@@ -140,7 +138,6 @@ public class MegaGraph {
 		manager.removeMegaMap(name + "__TweetsByHashtag");
 		
 		// Delete physical files
-		System.out.println(path + "/" + name);
 		removeFile(path + "/" + name + "__TweetSet");
 		removeFile(path + "/" + name + "__TweetList");
 		manager.deletePersistedMegaMap(name + "__Mention");
@@ -149,7 +146,6 @@ public class MegaGraph {
 		manager.deletePersistedMegaMap(name + "__UserTweets");
 		manager.deletePersistedMegaMap(name + "__HashtagsByTweet");
 		manager.deletePersistedMegaMap(name + "__TweetsByHashtag");
-		
 	}
 
 	private void addTweet(Long tweetID, Long userID) {
