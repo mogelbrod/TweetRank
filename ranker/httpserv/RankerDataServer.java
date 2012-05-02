@@ -26,6 +26,7 @@ public class RankerDataServer {
 
 		server = HttpServer.create(addr, backlog);
 		server.createContext("/form", new FormHandler());
+		server.createContext("/compute", new ComputeHandler(ranker));
 		server.createContext("/", new RequestHandler(ranker));
 		server.setExecutor(null);
 	}
@@ -36,11 +37,11 @@ public class RankerDataServer {
 
 	public static void main(String[] args) {
 		try {
-		    TweetRanker ranker = new TweetRanker();
-		    RankerDataServer server = new RankerDataServer(new InetSocketAddress(PORT), 0, ranker);
-		    server.start();
+			TweetRanker ranker = new TweetRanker();
+			RankerDataServer server = new RankerDataServer(new InetSocketAddress(PORT), 0, ranker);
+			server.start();
 		} catch (IOException e) {
-		    e.printStackTrace();
+			e.printStackTrace();
 		}
 	}
 }
@@ -51,13 +52,33 @@ public class RankerDataServer {
 class FormHandler implements HttpHandler {
 	public void handle(HttpExchange t) throws IOException {
 		String response = "<html><b>Test form:</b><br />" +
-				"<form method=\"post\" action=\"/\">" +
-				"	<input type=\"text\" name=\"type\" /><br />" +
-				"	<input type=\"text\" name=\"id\" /><br />" +
-				"	<textarea name=\"refID\"></textarea><br />" +
-				"	<textarea name=\"refID\"></textarea><br />" +
-				"	<input type=\"submit\" />" +
-				"</form></html>";
+		"<form method=\"post\" action=\"/\">" +
+		"	<input type=\"text\" name=\"type\" /><br />" +
+		"	<input type=\"text\" name=\"id\" /><br />" +
+		"	<textarea name=\"refID\"></textarea><br />" +
+		"	<textarea name=\"refID\"></textarea><br />" +
+		"	<input type=\"submit\" />" +
+		"</form></html>";
+		t.sendResponseHeaders(200, response.length());
+		OutputStream os = t.getResponseBody();
+		os.write(response.getBytes());
+		os.close();
+	}
+}
+
+class ComputeHandler implements HttpHandler {
+	private TweetRanker ranker;
+	
+	public ComputeHandler(TweetRanker ranker) {
+		super();
+		this.ranker = ranker;
+	}
+	
+	public void handle(HttpExchange t) throws IOException {
+		
+		ranker.computePageRank();
+		
+		String response = "";
 		t.sendResponseHeaders(200, response.length());
 		OutputStream os = t.getResponseBody();
 		os.write(response.getBytes());
