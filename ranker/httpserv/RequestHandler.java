@@ -127,11 +127,11 @@ class RequestHandler implements HttpHandler {
 			return;
 		}
 		
-		Integer id = null;
+		Long id = null;
 		try {
-			id  = Integer.valueOf(idStr);
+			id  = Long.valueOf(idStr);
 		} catch (Exception e) {
-			sendBadRequestResponse(t, "Unable to parse id '" + idStr + "' as integer.");
+			sendBadRequestResponse(t, "Unable to parse id '" + idStr + "' as long.");
 			return;
 		}
 		
@@ -144,30 +144,30 @@ class RequestHandler implements HttpHandler {
 			return;
 		}
 		
-		ArrayList<Integer> refIntIDs = new ArrayList<Integer>(refIDs.size());
+		ArrayList<Long> refLongIDs = new ArrayList<Long>(refIDs.size());
 		if (type != Type.HT) {
 			for (String refID : refIDs) {
 				try {
-					refIntIDs.add(Integer.valueOf(refID));
+					refLongIDs.add(Long.valueOf(refID));
 				} catch (Exception e) {
-					sendBadRequestResponse(t, "Failed to parse a refID '" + refID + "' as integer.");
+					sendBadRequestResponse(t, "Failed to parse a refID '" + refID + "' as long.");
 					return;
 				}
 			}
 		}
 		
 		if (type == Type.RT || type == Type.RP) {
-			if (refIntIDs.size() != 1) {
-				sendBadRequestResponse(t, "For RT and RP only one refID is allowed. Size: " + refIntIDs.size());
+			if (refLongIDs.size() != 1) {
+				sendBadRequestResponse(t, "For RT and RP only one refID is allowed. Size: " + refLongIDs.size());
 				return;
 			}
-			ranker.addRefTweets(id, refIntIDs.get(0));
+			ranker.addRefTweets(id, refLongIDs.get(0));
 		} else if (type == Type.FW) {
-			ranker.addFollows(id, refIntIDs);
+			ranker.addFollows(id, refLongIDs);
 		} else if (type == Type.MN) {
-			ranker.addMentioned(id, refIntIDs);
+			ranker.addMentioned(id, refLongIDs);
 		} else if (type == Type.TW) {
-			ranker.addUserTweets(id, refIntIDs);
+			ranker.addUserTweets(id, refLongIDs);
 		} else if (type == Type.HT) {
 			ranker.addHashtags(id, refIDs);
 		} else {
