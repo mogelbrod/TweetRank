@@ -36,12 +36,13 @@ public class RankerDataServer {
 
 	public static void main(String[] args) {
 		try {
-			RankerDataServer server = new RankerDataServer(new InetSocketAddress(PORT), 0, new TweetRanker());
-			server.start();
+		    TweetRanker ranker = new TweetRanker();
+		    RankerDataServer server = new RankerDataServer(new InetSocketAddress(PORT), 0, ranker);
+		    server.start();
 		} catch (IOException e) {
-			e.printStackTrace();
+		    e.printStackTrace();
 		}
-	}	
+	}
 }
 
 /**

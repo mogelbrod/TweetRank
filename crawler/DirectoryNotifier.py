@@ -18,16 +18,16 @@ def main(argv):
 
     rnotif = RankerNotifier()
     snotif = SolrNotifier()
-    
+
     data_dir = argv[1]
     tweets_dir = data_dir + '/tweets/'
     users_dir  = data_dir + '/users/'
-    """
+
     for fname in listdir(users_dir):
         user_id = int(fname.split('.')[0])
         ftype   = fname.split('.')[1]
         fname = users_dir + fname
-        
+
         if ftype == 'friends':
             f = open(fname, 'r')
             friends = []
@@ -35,7 +35,7 @@ def main(argv):
                 friends.append(int(l))
             rnotif.add_following(user_id, friends)
             f.close()
-    """
+
     ntweets = 0
     for fname in listdir(tweets_dir):
         fname = tweets_dir + fname
@@ -45,7 +45,7 @@ def main(argv):
         for tweet in dom.getElementsByTagName('status'):
             tweet = Tweet(tweet)
             tweets.append(tweet)
-            """
+
             # Ranker notification
             if tweet.get_retweeted_status() is not None:
                 rnotif.add_retweet(tweet.get_tweet_id(), tweet.get_retweeted_status().get_tweet_id())
@@ -58,19 +58,19 @@ def main(argv):
 
             if len(tweet.get_hashtags()) > 0:
                 rnotif.add_tweet_hashtags(tweet.get_tweet_id(), tweet.get_hashtags())
-            """
+
             if not tweet.get_user_id() in tweets_by_uid:
                 tweets_by_uid[tweet.get_user_id()] = set([tweet.get_tweet_id()])
             else:
                 tweets_by_uid[tweet.get_user_id()].add(tweet.get_tweet_id())
-        """
+
         for item in tweets_by_uid.items():
             rnotif.add_user_tweets(item[0], item[1])
-        """
+
         # SolrNotifier
         snotif.add_tweets(tweets)
         ntweets = ntweets + len(tweets)
-        if ntweets >= 10000:
+        if ntweets >= 100:
             break
 
     snotif.flush()
