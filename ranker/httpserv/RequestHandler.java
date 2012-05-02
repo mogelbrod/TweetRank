@@ -1,5 +1,7 @@
 package httpserv;
 
+import graph.MegaGraph;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -7,8 +9,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import ranker.TweetRanker;
-
+import com.larvalabs.megamap.MegaMapException;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
@@ -40,11 +41,11 @@ class RequestHandler implements HttpHandler {
 			return value;
 		}
 	};
-	
-	private TweetRanker ranker;
-	
-	public RequestHandler(TweetRanker ranker) {
-		this.ranker = ranker;
+
+	private MegaGraph graph;
+
+	public RequestHandler(MegaGraph graph) {
+		this.graph = graph;
 	}
 
 	private HashMap<String,ArrayList<String>> parseParams(InputStream is) throws Exception {
@@ -109,13 +110,13 @@ class RequestHandler implements HttpHandler {
 			e.printStackTrace();
 			return;
 		}
-		
+
 		String typeStr = params.get("TYPE").get(0).toUpperCase();
 		String idStr = params.get("ID").get(0);
 
 		Type type = null;
 		try {
-			 type = Type.valueOf(typeStr);
+			type = Type.valueOf(typeStr);
 		} catch (Exception e) {
 			sendBadRequestResponse(t, "Invalid type '" + typeStr + "'.");
 			return;
@@ -126,7 +127,7 @@ class RequestHandler implements HttpHandler {
 			sendBadRequestResponse(t, "An unique 'ID' parameter is mandatory.");
 			return;
 		}
-		
+
 		Long id = null;
 		try {
 			id  = Long.valueOf(idStr);
@@ -134,7 +135,7 @@ class RequestHandler implements HttpHandler {
 			sendBadRequestResponse(t, "Unable to parse id '" + idStr + "' as long.");
 			return;
 		}
-		
+
 
 		ArrayList<String> refIDs = params.get("REFID");
 
@@ -143,7 +144,7 @@ class RequestHandler implements HttpHandler {
 			sendBadRequestResponse(t, "At least one 'REFID' parameter must be indicated.");
 			return;
 		}
-		
+
 		ArrayList<Long> refLongIDs = new ArrayList<Long>(refIDs.size());
 		if (type != Type.HT) {
 			for (String refID : refIDs) {
@@ -155,27 +156,34 @@ class RequestHandler implements HttpHandler {
 				}
 			}
 		}
-		
-		if (type == Type.RT || type == Type.RP) {
-			if (refLongIDs.size() != 1) {
-				sendBadRequestResponse(t, "For RT and RP only one refID is allowed. Size: " + refLongIDs.size());
+
+		try {
+			if (type == Type.RT || type == Type.RP) {
+				if (refLongIDs.size() != 1) {
+					sendBadRequestResponse(t, "For RT and RP only one refID is allowed. Size: " + refLongIDs.size());
+					return;
+				}
+				graph.addRefTweets(id, refLongIDs.get(0));
+			} else if (type == Type.FW) {
+				graph.addFollows(id, refLongIDs);
+			} else if (type == Type.MN) {
+				graph.addMentioned(id, refLongIDs);
+			} else if (type == Type.TW) {
+				graph.addUserTweets(id, refLongIDs);
+			} else if (type == Type.HT) {
+				graph.addHashtags(id, refIDs);
+			} else {
+				sendBadRequestResponse(t, "Unknown type: " + type.toString());
 				return;
 			}
-			ranker.addRefTweets(id, refLongIDs.get(0));
-		} else if (type == Type.FW) {
-			ranker.addFollows(id, refLongIDs);
-		} else if (type == Type.MN) {
-			ranker.addMentioned(id, refLongIDs);
-		} else if (type == Type.TW) {
-			ranker.addUserTweets(id, refLongIDs);
-		} else if (type == Type.HT) {
-			ranker.addHashtags(id, refIDs);
-		} else {
-			sendBadRequestResponse(t, "Unknown type: " + type.toString());
-			return;
+
+			// Send OK response.
+			sendOKResponse(t, "OK!");
+		} catch (MegaMapException e) {
+			e.printStackTrace();
+			sendBadRequestResponse(t, "MegaMapException: " + e.getMessage());
 		}
 
-		// Send OK response.
-		sendOKResponse(t, "OK!");
+
 	}
 }
