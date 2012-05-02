@@ -22,11 +22,24 @@ public class RankerDataServer {
 	private static String path = "../data/graph/";
 	private HttpServer server;
 
+	private class StopHandler implements HttpHandler {
+		@Override
+		public void handle(HttpExchange t) throws IOException {
+			String response = "Closing...";
+			t.sendResponseHeaders(200, response.length());
+			OutputStream os = t.getResponseBody();
+			os.write(response.getBytes());
+			os.close();
+			server.stop(0);
+		}
+	}
+
 	public RankerDataServer(InetSocketAddress addr, int backlog, MegaGraph graph) throws IOException {
 		super();
 		server = HttpServer.create(addr, backlog);
 		server.createContext("/form", new FormHandler());
 		server.createContext("/compute", new ComputeHandler(graph));
+		server.createContext("/stop", new StopHandler());
 		server.createContext("/", new RequestHandler(graph));
 		server.setExecutor(null);
 	}
@@ -39,7 +52,7 @@ public class RankerDataServer {
 		MegaMapManager MMmanager = null;
 		MegaGraph graph = null;
 		RankerDataServer dserver = null;
-		
+
 		try {
 			MMmanager = MegaMapManager.getMegaMapManager();
 			MMmanager.setDiskStorePath(path);
@@ -50,6 +63,7 @@ public class RankerDataServer {
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
+			System.out.println("Saving data...");
 			if ( graph != null ) graph.saveTweets();
 			if ( MMmanager != null ) MMmanager.shutdown();
 		}
@@ -79,23 +93,23 @@ class FormHandler implements HttpHandler {
 class ComputeHandler implements HttpHandler {
 	private MegaGraph graph = null;
 	private Random r = new Random();
-	
+
 	public ComputeHandler(MegaGraph graph) {
 		super();
 		this.graph = graph;
 	}
-	
+
 	public void handle(HttpExchange t) throws IOException {
 		try {
 			String cgraph_name = (new Long(r.nextLong())).toString();
 			MegaGraph cgraph = graph.copy(cgraph_name);
 			TweetRanker ranker = new TweetRanker(cgraph);
 			ranker.computePageRank();
-			
-			
+
+
 			ranker = null;
 			cgraph.delete();
-			
+
 			String response = "";
 			t.sendResponseHeaders(200, response.length());
 			OutputStream os = t.getResponseBody();
@@ -103,7 +117,7 @@ class ComputeHandler implements HttpHandler {
 			os.close();
 		} catch ( MegaMapException e ) {
 			e.printStackTrace();
-			
+
 			String response = e.getMessage();
 			t.sendResponseHeaders(400, response.length());
 			OutputStream os = t.getResponseBody();
