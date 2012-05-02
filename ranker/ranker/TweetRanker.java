@@ -1,6 +1,5 @@
 package ranker;
 
-
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -50,7 +49,7 @@ public class TweetRanker {
 	private synchronized void addAllTweets(List<Integer> tweetIDs) {
 		for (Integer tid : tweetIDs)
 			addTweet(tid);
-	} 
+	}
 
 	public synchronized void addRefTweets(Integer tweetID, Integer refTweetID) {
 		refTweets.put(tweetID, refTweetID);
@@ -107,72 +106,53 @@ public class TweetRanker {
 
 	/** Jump to a random tweet from a random related user (mentioned/followed, just pass the appropiate list). */
 	private Integer jumpUserTweet(Integer tweetID, Random r, List<Integer> usersList) {
-		// We should only consider those related users with at least one tweet.
-		ArrayList<Integer> usersWithTweets = new ArrayList<Integer>();
-		for ( Integer user : usersList ) {
-			List<Integer> user_tweets = userTweets.get(user);
-			if ( user_tweets != null && user_tweets.size() > 0 )
-				usersWithTweets.add(user);
-		}
+		// If there are no related users, then jump to a random tweet.
+		if (usersList == null || usersList.size() == 0) return randomJump(r);
 
-		// If there are not related users with tweets, we can't jump to one of that tweets!
-		if (usersWithTweets.size() == 0) return randomJump(r);
-
-		Integer randomUser = usersWithTweets.get(r.nextInt(usersWithTweets.size()));
+		Integer randomUser = usersList.get(r.nextInt(usersList.size()));
 		List<Integer> tweetsOfUser = userTweets.get(randomUser);
+
+		// If the related user does not have tweets, we jump to a random tweet.
+		if (tweetsOfUser == null || tweetsOfUser.size() == 0) return randomJump(r);
+
 		return tweetsOfUser.get(r.nextInt(tweetsOfUser.size()));
 	}
 
 	/** Jump to a random hashtag for the given tweet, and then to a random tweet for that hashtag. */
 	private Integer jumpHashtagTweet(Integer tweetID, Random r) {
 		List<String> tweet_hts = hashtagsByTweet.get(tweetID);
-		String randomHashtag = tweet_hts.get(r.nextInt(tweet_hts.size()));
+		if (tweet_hts == null || tweet_hts.size() == 0) return randomJump(r);
 
+		String randomHashtag = tweet_hts.get(r.nextInt(tweet_hts.size()));
 		List<Integer> hashtag_tws = tweetsByHashtag.get(randomHashtag);
 		return hashtag_tws.get(r.nextInt(hashtag_tws.size()));
 	}
 
 	/** Jump to the referenced tweet. */
-	private Integer jumpReferenceTweet(Integer tweetID) {
-		return refTweets.get(tweetID);
+	private Integer jumpReferenceTweet(Integer tweetID, Random r) {
+		if ( !refTweets.containsKey(tweetID) ) return randomJump(r);
+		else return refTweets.get(tweetID);
 	}
 
 	private void MCCompletePath(int m) {
 		Random r = new Random();
 		double random;
 
-		for(Integer currentID : tweets) {	
+		for(Integer currentID : tweets) {
 			for(int i = 1; i <= m; ++i) {
 				random = r.nextDouble();
 
-				if ( random <= VISIT_REFERENCED_TWEET && refTweets.containsKey(currentID) ) {
-					currentID = jumpReferenceTweet(currentID);
-					addVisit(currentID);
-					continue;
-				}
-
-
-				if( random <= VISIT_MENTIONED_USER && mentioned.containsKey(currentID) ) {
+				if ( random <= VISIT_REFERENCED_TWEET )
+					currentID = jumpReferenceTweet(currentID, r);
+				else if ( random <= VISIT_MENTIONED_USER )
 					currentID = jumpUserTweet(currentID, r, mentioned.get(currentID));
-					addVisit(currentID);
-					continue;
-				}
-
-
-				if( random <= VISIT_FOLLOWED_USER && follows.containsKey(currentID) ) {
+				else if ( random <= VISIT_FOLLOWED_USER )
 					currentID = jumpUserTweet(currentID, r, follows.get(currentID));
-					addVisit(currentID);
-					continue;
-				}
-
-				if( random <= VISIT_USED_HASHTAG && hashtagsByTweet.containsKey(currentID) ) {
+				else if ( random <= VISIT_USED_HASHTAG )
 					currentID = jumpHashtagTweet(currentID, r);
-					addVisit(currentID);
-					continue;
-				}
+				else
+					currentID = randomJump(r);
 
-				// Random jump
-				currentID = randomJump(r);
 				addVisit(currentID);
 			}
 		}
