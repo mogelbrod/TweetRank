@@ -54,13 +54,11 @@ class RequestHandler implements HttpHandler {
 		String body_line;
 
 		while ( (body_line = br.readLine()) != null ) {
-			body_line = body_line.toLowerCase();
 			String[] parts = body_line.split("&");
 			for(int i = 0; i < parts.length; ++i) {
 				String[] parameter = parts[i].split("=");
 				if (parameter.length != 2 || parameter[0].length() == 0 || parameter[1].length() == 0)
 					throw new Exception("Bad parameter for key '" + parameter[0] + "'.");
-
 				parameter[0] = parameter[0].toUpperCase();
 				ArrayList<String> values = params.get(parameter[0]);
 				if ( values == null ) values = new ArrayList<String>();
@@ -95,8 +93,6 @@ class RequestHandler implements HttpHandler {
 	/** This method is executed when a new HTTP connection is accepted
 	by the server. */
 	public void handle(HttpExchange t) throws IOException {
-		boolean success = false;
-		String response = "";
 
 		// Check POST request
 		if ( !t.getRequestMethod().toUpperCase().equals("POST") ) {
@@ -113,11 +109,9 @@ class RequestHandler implements HttpHandler {
 			e.printStackTrace();
 			return;
 		}
-		System.out.println("Debug: parsing complete.");
-
+		
 		String typeStr = params.get("TYPE").get(0).toUpperCase();
-		String id = params.get("ID").get(0);
-		ArrayList<String> refIDs = params.get("REFID");
+		String idStr = params.get("ID").get(0);
 
 		Type type = null;
 		try {
@@ -126,12 +120,23 @@ class RequestHandler implements HttpHandler {
 			sendBadRequestResponse(t, "Invalid type '" + typeStr + "'.");
 			return;
 		}
-
 		// Check the 'ID' parameter.
-		if ( id == null || params.get("ID").size() != 1) {
+
+		if ( idStr == null || params.get("ID").size() != 1) {
 			sendBadRequestResponse(t, "An unique 'ID' parameter is mandatory.");
 			return;
 		}
+		
+		Integer id = null;
+		try {
+			id  = Integer.valueOf(idStr);
+		} catch (Exception e) {
+			sendBadRequestResponse(t, "Unable to parse id '" + idStr + "' as integer.");
+			return;
+		}
+		
+
+		ArrayList<String> refIDs = params.get("REFID");
 
 		// Check the 'RefID' parameter.
 		if ( refIDs == null || refIDs.size() == 0 ) {
@@ -139,40 +144,36 @@ class RequestHandler implements HttpHandler {
 			return;
 		}
 		
+		ArrayList<Integer> refIntIDs = new ArrayList<Integer>(refIDs.size());
+		if (type != Type.HT) {
+			for (String refID : refIDs) {
+				try {
+					refIntIDs.add(Integer.valueOf(refID));
+				} catch (Exception e) {
+					sendBadRequestResponse(t, "Failed to parse a refID '" + refID + "' as integer.");
+					return;
+				}
+			}
+		}
+		
 		if (type == Type.RT || type == Type.RP) {
-			ranker.addRefTweets(id, refIDs);
+			if (refIntIDs.size() != 1) {
+				sendBadRequestResponse(t, "For RT and RP only one refID is allowed. Size: " + refIntIDs.size());
+				return;
+			}
+			ranker.addRefTweets(id, refIntIDs.get(0));
 		} else if (type == Type.FW) {
-			ranker.addFollows(id, refIDs);
+			ranker.addFollows(id, refIntIDs);
 		} else if (type == Type.MN) {
-			ranker.addMentioned(id, refIDs);
+			ranker.addMentioned(id, refIntIDs);
 		} else if (type == Type.TW) {
-			ranker.addUserTweets(id, refIDs);
+			ranker.addUserTweets(id, refIntIDs);
 		} else if (type == Type.HT) {
 			ranker.addHashtags(id, refIDs);
 		} else {
 			sendBadRequestResponse(t, "Unknown type: " + type.toString());
 			return;
 		}
-
-		//		if ( action.equals("/RT") ) {
-		//			//String tweet_id = ID_values.get(0);
-		//			//ArrayList<String> ref_tweet_ids = RefID_values;
-		//		} else if ( action.equals("/RP") ) {
-		//			//String tweet_id = ID_values.get(0);
-		//			//ArrayList<String> ref_tweet_ids = RefID_values;
-		//		} else if ( action.equals("/MN") ) {
-		//			//String tweet_id = ID_values.get(0);
-		//			//ArrayList<String> ref_user_ids = RefID_values;
-		//		} else if ( action.equals("/FW") ) {
-		//			//String user_id = ID_values.get(0);
-		//			//ArrayList<String> ref_user_ids = RefID_values;
-		//		} else if ( action.equals("/TW") ) {
-		//			//String user_id = ID_values.get(0);
-		//			//ArrayList<String> ref_tweet_ids = RefID_values;
-		//		} else {
-		//			//String tweet_id = ID_values.get(0);
-		//			//ArrayList<String> hashtags = RefID_values;
-		//		}
 
 		// Send OK response.
 		sendOKResponse(t, "OK!");
