@@ -151,6 +151,12 @@ $val##
 #end
 #end
 
+#macro(linked_field $f)
+#foreach($v in $doc.getFieldValues($f))
+<a class="$f" href="?q=$f:$v">$v</a>
+#end
+#end
+
 #macro(utc_date $theDate)
 $date.format("yyyy-MM-dd'T'HH:mm:ss'Z'",$theDate,$date.getLocale(),$date.getTimeZone().getTimeZone("UTC"))##
 #end
