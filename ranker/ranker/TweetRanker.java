@@ -12,105 +12,105 @@ public class TweetRanker {
 	private final double RANDOM_JUMP            = 1.00; // 10%
 
 	/** Mapping between a tweet and how many times it's been visited by the surfer */
-	private Hashtable<Integer, Integer> tweetVisited = new Hashtable<Integer, Integer>();
+	private Hashtable<Long, Long> tweetVisited = new Hashtable<Long, Long>();
 
 	/** Maps users to tweets */
-	private Hashtable<Integer, List<Integer>> userTweets = new Hashtable<Integer, List<Integer>>();
+	private Hashtable<Long, List<Long>> userTweets = new Hashtable<Long, List<Long>>();
 
 	/** Contains all tweets */
-	private HashSet<Integer> tweet_set = new HashSet<Integer>();
-	private ArrayList<Integer> tweets  = new ArrayList<Integer>();
+	private HashSet<Long> tweet_set = new HashSet<Long>();
+	private ArrayList<Long> tweets  = new ArrayList<Long>();
 
 	/** Maps a tweet to a list of user mentions */
-	private Hashtable<Integer, List<Integer>> mentioned = new Hashtable<Integer, List<Integer>>();
+	private Hashtable<Long, List<Long>> mentioned = new Hashtable<Long, List<Long>>();
 
 	/** Maps a user to a list of users he/she follows */
-	private Hashtable<Integer, List<Integer>> follows = new Hashtable<Integer, List<Integer>>();
+	private Hashtable<Long, List<Long>> follows = new Hashtable<Long, List<Long>>();
 
 	/** Map a reply/retweet to the original tweet */
-	private Hashtable<Integer, Integer> refTweets = new Hashtable<Integer, Integer>();
+	private Hashtable<Long, Long> refTweets = new Hashtable<Long, Long>();
 
 	/** Map a tweet to a list of hashtags */
-	private Hashtable<Integer, List<String>> hashtagsByTweet = new Hashtable<Integer,List<String>>();
-	private Hashtable<String, List<Integer>> tweetsByHashtag = new Hashtable<String,List<Integer>>();
+	private Hashtable<Long, List<String>> hashtagsByTweet = new Hashtable<Long,List<String>>();
+	private Hashtable<String, List<Long>> tweetsByHashtag = new Hashtable<String,List<Long>>();
 
 	public void computePageRank() {
 		int m = tweets.size()/10;
 		MCCompletePath(m);
 	}
 
-	private synchronized void addTweet(Integer tweetID) {
+	private synchronized void addTweet(Long tweetID) {
 		if ( !tweet_set.contains(tweetID) ) {
 			tweet_set.add(tweetID);
 			tweets.add(tweetID);
 		}
 	}
 
-	private synchronized void addAllTweets(List<Integer> tweetIDs) {
-		for (Integer tid : tweetIDs)
+	private synchronized void addAllTweets(List<Long> tweetIDs) {
+		for (Long tid : tweetIDs)
 			addTweet(tid);
 	}
 
-	public synchronized void addRefTweets(Integer tweetID, Integer refTweetID) {
+	public synchronized void addRefTweets(Long tweetID, Long refTweetID) {
 		refTweets.put(tweetID, refTweetID);
 		addTweet(tweetID);
 		addTweet(refTweetID);
 	}
 
-	public synchronized void addUserTweets(Integer userID, List<Integer> tweetIDs) {
-		List<Integer> curr_list = userTweets.get(userID);
-		if (curr_list == null) userTweets.put(userID, (curr_list = new ArrayList<Integer>()));
+	public synchronized void addUserTweets(Long userID, List<Long> tweetIDs) {
+		List<Long> curr_list = userTweets.get(userID);
+		if (curr_list == null) userTweets.put(userID, (curr_list = new ArrayList<Long>()));
 		curr_list.addAll(tweetIDs);
 		addAllTweets(tweetIDs);
 	}
 
-	public synchronized void addMentioned(Integer tweetID, List<Integer> userIDs) {
-		List<Integer> curr_list = mentioned.get(tweetID);
-		if (curr_list == null) mentioned.put(tweetID, (curr_list = new ArrayList<Integer>()));
+	public synchronized void addMentioned(Long tweetID, List<Long> userIDs) {
+		List<Long> curr_list = mentioned.get(tweetID);
+		if (curr_list == null) mentioned.put(tweetID, (curr_list = new ArrayList<Long>()));
 		curr_list.addAll(userIDs);
 		addTweet(tweetID);
 	}
 
-	public synchronized void addFollows(Integer userID, List<Integer> userIDs) {
-		List<Integer> curr_list = follows.get(userID);
-		if (curr_list == null) follows.put(userID, (curr_list = new ArrayList<Integer>()));
+	public synchronized void addFollows(Long userID, List<Long> userIDs) {
+		List<Long> curr_list = follows.get(userID);
+		if (curr_list == null) follows.put(userID, (curr_list = new ArrayList<Long>()));
 		curr_list.addAll(userIDs);
 	}
 
-	public synchronized void addHashtags(Integer tweetID, List<String> hashtags) {
+	public synchronized void addHashtags(Long tweetID, List<String> hashtags) {
 		List<String> curr_list = hashtagsByTweet.get(tweetID);
 		if (curr_list == null) hashtagsByTweet.put(tweetID, (curr_list = new ArrayList<String>()));
 		curr_list.addAll(hashtags);
 
 		// Transpose the list
 		for(String ht : hashtags) {
-			List<Integer> tweets = tweetsByHashtag.get(ht);
-			if (tweets == null) tweetsByHashtag.put(ht, (tweets = new ArrayList<Integer>()));
+			List<Long> tweets = tweetsByHashtag.get(ht);
+			if (tweets == null) tweetsByHashtag.put(ht, (tweets = new ArrayList<Long>()));
 			tweets.add(tweetID);
 		}
 
 		addTweet(tweetID);
 	}
 
-	private void addVisit(Integer tweetID) {
-		Integer c = tweetVisited.get(tweetID);
-		if ( c == null ) c = 1;
+	private void addVisit(Long tweetID) {
+		Long c = tweetVisited.get(tweetID);
+		if ( c == null ) c = 1L;
 		else c = c + 1;
 		tweetVisited.put(tweetID, c);
 	}
 
 	/** Jump to a random tweet. */
-	private Integer randomJump(Random r) {
+	private Long randomJump(Random r) {
 		return tweets.get(r.nextInt(tweets.size()));
 	}
 
 	/** Jump to a random tweet from a random related user (mentioned/followed, just pass the appropiate list). */
-	private Integer jumpUserTweet(Integer tweetID, Random r, List<Integer> usersList) {
+	private Long jumpUserTweet(Long tweetID, Random r, List<Long> usersList) {
 		// If there are no related users, then jump to a random tweet.
 		if (usersList == null || usersList.size() == 0) return randomJump(r);
 
-		Integer randomUser = usersList.get(r.nextInt(usersList.size()));
-		List<Integer> tweetsOfUser = userTweets.get(randomUser);
+		Long randomUser = usersList.get(r.nextInt(usersList.size()));
+		List<Long> tweetsOfUser = userTweets.get(randomUser);
 
 		// If the related user does not have tweets, we jump to a random tweet.
 		if (tweetsOfUser == null || tweetsOfUser.size() == 0) return randomJump(r);
@@ -119,17 +119,17 @@ public class TweetRanker {
 	}
 
 	/** Jump to a random hashtag for the given tweet, and then to a random tweet for that hashtag. */
-	private Integer jumpHashtagTweet(Integer tweetID, Random r) {
+	private Long jumpHashtagTweet(Long tweetID, Random r) {
 		List<String> tweet_hts = hashtagsByTweet.get(tweetID);
 		if (tweet_hts == null || tweet_hts.size() == 0) return randomJump(r);
 
 		String randomHashtag = tweet_hts.get(r.nextInt(tweet_hts.size()));
-		List<Integer> hashtag_tws = tweetsByHashtag.get(randomHashtag);
+		List<Long> hashtag_tws = tweetsByHashtag.get(randomHashtag);
 		return hashtag_tws.get(r.nextInt(hashtag_tws.size()));
 	}
 
 	/** Jump to the referenced tweet. */
-	private Integer jumpReferenceTweet(Integer tweetID, Random r) {
+	private Long jumpReferenceTweet(Long tweetID, Random r) {
 		if ( !refTweets.containsKey(tweetID) ) return randomJump(r);
 		else return refTweets.get(tweetID);
 	}
@@ -138,7 +138,7 @@ public class TweetRanker {
 		Random r = new Random();
 		double random;
 
-		for(Integer currentID : tweets) {
+		for(Long currentID : tweets) {
 			for(int i = 1; i <= m; ++i) {
 				random = r.nextDouble();
 
@@ -157,7 +157,7 @@ public class TweetRanker {
 			}
 		}
 
-		for(Entry<Integer,Integer> entry : tweetVisited.entrySet()) {
+		for(Entry<Long,Long> entry : tweetVisited.entrySet()) {
 			Double tweetRank = entry.getValue()/(double)(tweets.size() * m);
 			System.out.println(entry.getKey() + "\t" + tweetRank);
 		}
