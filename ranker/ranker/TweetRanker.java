@@ -25,7 +25,7 @@ public class TweetRanker {
 	}
 
 	public void computePageRank() {
-		int m = graph.getOrder()/10;
+		int m = graph.getOrder()/5;
 		MCCompletePath(m);
 	}
 

@@ -84,6 +84,20 @@ public class MegaGraph {
 		mg.tweetsByHashtag = mg.loadOrCreateMegaMap(name + "__TweetsByHashtag");
 		return mg;
 	}
+	
+	private static void copyMegaMap(MegaMap src, MegaMap dst) throws MegaMapException {
+		@SuppressWarnings("unchecked")
+		Set<Serializable> keys = src.getKeys();
+		for (Serializable key : keys) {
+			Serializable value = src.get(key);
+			dst.put(key, value);
+		}
+	}
+	
+	private static void removeFile(String filename) {
+		File f = new File(filename);
+		if (f.exists() && f.isFile()) f.delete();
+	}
 
 	/** Copy the current graph to a new file. */
 	public MegaGraph copy(String name) throws MegaMapException {
@@ -96,37 +110,46 @@ public class MegaGraph {
 		mg.mentioned  = mg.loadOrCreateMegaMap(name + "__Mention");
 		mg.follows    = mg.loadOrCreateMegaMap(name + "__Follows");
 		mg.refTweets  = mg.loadOrCreateMegaMap(name + "__RefTweets");
-		mg.userTweets = mg.loadOrCreateMegaMap(name + "__TweetsByUser");
+		mg.userTweets = mg.loadOrCreateMegaMap(name + "__UserTweets");
 		mg.hashtagsByTweet = mg.loadOrCreateMegaMap(name + "__HashtagsByTweet");
-		mg.tweetsByHashtag = mg.loadOrCreateMegaMap(name + "__TweetsByHashtag");		
+		mg.tweetsByHashtag = mg.loadOrCreateMegaMap(name + "__TweetsByHashtag");
+		
+		// Copy tweetSet and tweetList...
+		mg.tweetSet.putAll(tweetSet);
+		mg.tweetList.addAll(tweetList);
+
+		// Copy MegaMaps...
+		copyMegaMap(mentioned, mg.mentioned);
+		copyMegaMap(follows, mg.follows);
+		copyMegaMap(refTweets, mg.refTweets);
+		copyMegaMap(userTweets, mg.userTweets);
+		copyMegaMap(hashtagsByTweet, mg.hashtagsByTweet);
+		copyMegaMap(tweetsByHashtag, mg.tweetsByHashtag);
+
 		return mg;
 	}
 
 	/** Delete the files of the current graph. The graph MUST NOT BE USED AGAIN. */
 	public void delete() throws MegaMapException {
-		// Remove references
-		mentioned = null;
-		follows = null;
-		refTweets = null;
-		userTweets = null;
-		hashtagsByTweet = null;
-		tweetsByHashtag = null;
-		tweetSet = null;
-		tweetList = null;
-
-		// Delete files managed by MegaMap
+		// Remove references to MegaMaps
+		manager.removeMegaMap(name + "__Mention");
+		manager.removeMegaMap(name + "__Follows");
+		manager.removeMegaMap(name + "__RefTweets");
+		manager.removeMegaMap(name + "__UserTweets");
+		manager.removeMegaMap(name + "__HashtagsByTweet");
+		manager.removeMegaMap(name + "__TweetsByHashtag");
+		
+		// Delete physical files
+		System.out.println(path + "/" + name);
+		removeFile(path + "/" + name + "__TweetSet");
+		removeFile(path + "/" + name + "__TweetList");
 		manager.deletePersistedMegaMap(name + "__Mention");
 		manager.deletePersistedMegaMap(name + "__Follows");
 		manager.deletePersistedMegaMap(name + "__RefTweets");
 		manager.deletePersistedMegaMap(name + "__UserTweets");
 		manager.deletePersistedMegaMap(name + "__HashtagsByTweet");
 		manager.deletePersistedMegaMap(name + "__TweetsByHashtag");
-
-		// Delete files not managed by MegaMap
-		File f = new File(path + "/" + name + "__TweetSet");
-		if (f.exists() && f.isFile()) f.delete();
-		f = new File(path + "/" + name + "__TweetList");
-		if (f.exists() && f.isFile()) f.delete();
+		
 	}
 
 	private void addTweet(Long tweetID, Long userID) {

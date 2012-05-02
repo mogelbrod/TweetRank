@@ -48,7 +48,7 @@ class RequestHandler implements HttpHandler {
 		this.graph = graph;
 	}
 
-	private HashMap<String,ArrayList<String>> parseParams(InputStream is) throws Exception {
+	private static HashMap<String,ArrayList<String>> parseParams(InputStream is) throws Exception {
 		HashMap<String,ArrayList<String>> params = new HashMap<String,ArrayList<String>>(); 
 		InputStreamReader isr = new InputStreamReader(is, "UTF-8");
 		BufferedReader br = new BufferedReader(isr);
@@ -71,23 +71,25 @@ class RequestHandler implements HttpHandler {
 	}
 
 	/** This method is used to send a Bad Reponse to the client. */
-	private void sendBadRequestResponse(HttpExchange t, String message) {
+	private static void sendBadRequestResponse(HttpExchange t, String message) {
 		try {
 			System.err.println(message);
 			t.sendResponseHeaders(400, message.length());
 			t.getResponseBody().write(message.getBytes());
 			t.getResponseBody().close();
 		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
 	/** This method is used to send a OK to the client. */
-	private void sendOKResponse(HttpExchange t, String message) {
+	private static void sendOKResponse(HttpExchange t, String message) {
 		try {
 			t.sendResponseHeaders(200, message.length());
 			t.getResponseBody().write(message.getBytes());
 			t.getResponseBody().close();
 		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -107,7 +109,6 @@ class RequestHandler implements HttpHandler {
 			params = parseParams(t.getRequestBody());
 		} catch (Exception e) {
 			sendBadRequestResponse(t, "Bad parameters. " + e.getMessage());
-			e.printStackTrace();
 			return;
 		}
 
@@ -181,7 +182,7 @@ class RequestHandler implements HttpHandler {
 			sendOKResponse(t, "OK!");
 		} catch (MegaMapException e) {
 			e.printStackTrace();
-			sendBadRequestResponse(t, "MegaMapException: " + e.getMessage());
+			sendBadRequestResponse(t, e.getMessage());
 		}
 
 

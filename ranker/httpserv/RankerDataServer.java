@@ -23,6 +23,14 @@ public class RankerDataServer {
 	private HttpServer server;
 
 	private class StopHandler implements HttpHandler {
+		private MegaMapManager MMmanager;
+		private MegaGraph graph;
+
+		public StopHandler(MegaMapManager MMmanager, MegaGraph graph) {
+			this.MMmanager = MMmanager;
+			this.graph     = graph;
+		}
+
 		@Override
 		public void handle(HttpExchange t) throws IOException {
 			String response = "Closing...";
@@ -31,15 +39,19 @@ public class RankerDataServer {
 			os.write(response.getBytes());
 			os.close();
 			server.stop(0);
+
+			System.out.println("Saving data...");
+			graph.saveTweets();
+			MMmanager.shutdown();
 		}
 	}
 
-	public RankerDataServer(InetSocketAddress addr, int backlog, MegaGraph graph) throws IOException {
+	public RankerDataServer(InetSocketAddress addr, int backlog, MegaGraph graph, MegaMapManager MMmanager) throws IOException {
 		super();
 		server = HttpServer.create(addr, backlog);
 		server.createContext("/form", new FormHandler());
 		server.createContext("/compute", new ComputeHandler(graph));
-		server.createContext("/stop", new StopHandler());
+		server.createContext("/stop", new StopHandler(MMmanager, graph));
 		server.createContext("/", new RequestHandler(graph));
 		server.setExecutor(null);
 	}
@@ -58,14 +70,10 @@ public class RankerDataServer {
 			MMmanager.setDiskStorePath(path);
 
 			graph = MegaGraph.createMegaGraph(name, path);
-			dserver = new RankerDataServer(new InetSocketAddress(RankerDataServer.PORT), 15, graph);
+			dserver = new RankerDataServer(new InetSocketAddress(RankerDataServer.PORT), 15, graph, MMmanager);
 			dserver.start();
 		} catch (Exception e) {
 			e.printStackTrace();
-		} finally {
-			System.out.println("Saving data...");
-			if ( graph != null ) graph.saveTweets();
-			if ( MMmanager != null ) MMmanager.shutdown();
 		}
 	}
 }
@@ -100,29 +108,28 @@ class ComputeHandler implements HttpHandler {
 	}
 
 	public void handle(HttpExchange t) throws IOException {
+		Integer code = 400;
+		String response = "";
 		try {
-			String cgraph_name = (new Long(r.nextLong())).toString();
-			MegaGraph cgraph = graph.copy(cgraph_name);
+			Long gid = r.nextLong();
+			if (gid.compareTo(0L) < 0) gid = -gid;
+			
+			MegaGraph cgraph = graph.copy(gid.toString());
 			TweetRanker ranker = new TweetRanker(cgraph);
 			ranker.computePageRank();
 
-
-			ranker = null;
 			cgraph.delete();
-
-			String response = "";
-			t.sendResponseHeaders(200, response.length());
-			OutputStream os = t.getResponseBody();
-			os.write(response.getBytes());
-			os.close();
-		} catch ( MegaMapException e ) {
+			response = "OK!";
+			code = 200;
+		} catch (MegaMapException e) {
 			e.printStackTrace();
-
-			String response = e.getMessage();
-			t.sendResponseHeaders(400, response.length());
-			OutputStream os = t.getResponseBody();
-			os.write(response.getBytes());
-			os.close();			
+			response = e.getMessage();
+			code = 400;
 		}
+		
+		t.sendResponseHeaders(code, response.length());
+		OutputStream os = t.getResponseBody();
+		os.write(response.getBytes());
+		os.close();
 	}
 }
