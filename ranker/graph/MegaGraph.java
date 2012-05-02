@@ -256,11 +256,44 @@ public class MegaGraph {
 		return tweetSet.get(tweetID);
 	}
 	
-	public int getOrder() {
-		return tweetSet.size();
-	}
-
 	public Set<Long> getTweetSet() {
 		return tweetSet.keySet();
+	}
+	
+	public int getNumberOfTweets() {
+		return tweetSet.size();
+	}
+	
+	public int getNumberOfUsers() {
+		return userTweets.getKeys().size();
+	}
+	
+	public int getNumberOfHashtags() {
+		return tweetsByHashtag.getKeys().size();
+	}
+	
+	@SuppressWarnings("unchecked")
+	public double getAverageFriendsPerUser() throws MegaMapException {
+		int Tfollowed = 0;
+		for (Long uid : (Set<Long>)follows.getKeys())
+			Tfollowed += ((ArrayList<Long>)follows.get(uid)).size();
+		
+		return Tfollowed/(double)getNumberOfUsers();
+	}
+	
+	public double getAverageTweetsPerUser() {
+		return getNumberOfTweets()/(double)getNumberOfUsers();
+	}
+	
+	@SuppressWarnings("unchecked")
+	public double getAverageMentionsPerTweet() throws MegaMapException {
+		int Tmentions = 0;
+		for (Long tid : (Set<Long>)mentioned.getKeys())
+			Tmentions += ((ArrayList<Long>)mentioned.get(tid)).size();
+		return Tmentions/(double)getNumberOfTweets();
+	}
+	
+	public double getAverageReferencePerTweet() {
+		return refTweets.getKeys().size()/(double)getNumberOfTweets();
 	}
 }

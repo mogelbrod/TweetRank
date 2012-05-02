@@ -25,7 +25,7 @@ public class TweetRanker {
 	}
 
 	public void computePageRank() {
-		int m = graph.getOrder()/5;
+		int m = graph.getNumberOfTweets()/5;
 		MCCompletePath(m);
 	}
 
@@ -93,7 +93,7 @@ public class TweetRanker {
 			}
 
 			for(Entry<Long,Long> entry : tweetVisited.entrySet()) {
-				Double tweetRank = entry.getValue()/(double)(graph.getOrder() * m);
+				Double tweetRank = entry.getValue()/(double)(graph.getNumberOfTweets() * m);
 				System.out.println(entry.getKey() + "\t" + tweetRank);
 			}
 		} catch (MegaMapException e) {
