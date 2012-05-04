@@ -1,6 +1,7 @@
 package httpserv;
 
-import graph.Graph;
+import graph.TemporaryGraph;
+import graph.PersistentGraph;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -23,10 +24,10 @@ public class RankerDataServer {
 	private HttpServer server;
 
 	private class ComputeHandler implements HttpHandler {
-		private Graph graph = null;
+		private PersistentGraph graph = null;
 		private Random r = new Random();
 
-		public ComputeHandler(Graph graph) {
+		public ComputeHandler(PersistentGraph graph) {
 			super();
 			this.graph = graph;
 		}
@@ -36,9 +37,7 @@ public class RankerDataServer {
 			Long gid = r.nextLong();
 			if (gid.compareTo(0L) < 0) gid = -gid;
 
-			Graph cgraph =  new Graph(graph, graph.getPath(), gid.toString());
-
-			TweetRanker ranker = new TweetRanker(cgraph);
+			TweetRanker ranker = new TweetRanker(new TemporaryGraph(graph));
 			HashMap<Long,Double> pr = ranker.computePageRank();
 			for(Map.Entry<Long, Double> entry : pr.entrySet()) {
 				response = response + entry.getKey() + "\t" + entry.getValue() + "\n";
@@ -54,9 +53,9 @@ public class RankerDataServer {
 
 	/** This class handles the STOP requests. */
 	private class StopHandler implements HttpHandler {
-		private Graph graph;
+		private PersistentGraph graph;
 
-		public StopHandler(Graph graph) {
+		public StopHandler(PersistentGraph graph) {
 			super();
 			this.graph     = graph;
 		}
@@ -77,9 +76,9 @@ public class RankerDataServer {
 
 	/** This class handles the STATUS requests. */
 	private class StatusHandler implements HttpHandler {
-		private Graph graph;
+		private PersistentGraph graph;
 
-		public StatusHandler(Graph graph) {
+		public StatusHandler(PersistentGraph graph) {
 			super();
 			this.graph = graph;
 		}
@@ -103,7 +102,7 @@ public class RankerDataServer {
 		}
 	}
 
-	public RankerDataServer(InetSocketAddress addr, int backlog, Graph graph) throws IOException {
+	public RankerDataServer(InetSocketAddress addr, int backlog, PersistentGraph graph) throws IOException {
 		super();
 		server = HttpServer.create(addr, backlog);
 		server.createContext("/form", new FormHandler());
@@ -120,7 +119,7 @@ public class RankerDataServer {
 
 	public static void main(String[] args) {	
 		try {
-			Graph graph = new Graph(name, path);
+			PersistentGraph graph = new PersistentGraph(name, path);
 			RankerDataServer dserver = new RankerDataServer(new InetSocketAddress(RankerDataServer.PORT), 15, graph);
 			dserver.start();
 			System.out.println("Ranker running...");

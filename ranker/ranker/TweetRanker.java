@@ -1,6 +1,6 @@
 package ranker;
 
-import graph.Graph;
+import graph.TemporaryGraph;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -16,9 +16,9 @@ public class TweetRanker {
 	/** Mapping between a tweet and how many times it's been visited by the surfer */
 	private HashMap<Long, Long> tweetVisited = new HashMap<Long, Long>();	
 
-	private Graph graph;
+	private TemporaryGraph graph;
 
-	public TweetRanker(Graph graph) {
+	public TweetRanker(TemporaryGraph graph) {
 		this.graph = graph;
 	}
 
@@ -36,27 +36,27 @@ public class TweetRanker {
 
 
 	/** Jump to a random tweet from a random related user (mentioned/followed, just pass the appropiate list). */
-	private Long jumpUserTweet(Long[] usersList, Random r) {
+	private Long jumpUserTweet(ArrayList<Long> usersList, Random r) {
 		// If there are no related users, then jump to a random tweet.
-		if (usersList == null || usersList.length == 0) return graph.getRandomTweet(r);
+		if (usersList == null || usersList.size() == 0) return graph.getRandomTweet(r);
 
-		Long randomUser = usersList[r.nextInt(usersList.length)];
-		Long[] tweetsOfUser = graph.getUserTweets(randomUser);
+		Long randomUser = usersList.get(r.nextInt(usersList.size()));
+		ArrayList<Long> tweetsOfUser = graph.getUserTweets(randomUser);
 
 		// If the related user does not have tweets, we jump to a random tweet.
-		if (tweetsOfUser == null || tweetsOfUser.length == 0) return graph.getRandomTweet(r);
+		if (tweetsOfUser == null || tweetsOfUser.size() == 0) return graph.getRandomTweet(r);
 
-		return tweetsOfUser[r.nextInt(tweetsOfUser.length)];
+		return tweetsOfUser.get(r.nextInt(tweetsOfUser.size()));
 	}
 
 	/** Jump to a random hashtag for the given tweet, and then to a random tweet for that hashtag. */
 	private Long jumpHashtagTweet(Long tweetID, Random r) /*throws MegaMapException*/ {
-		String[] tweet_hts = graph.getHashtagsByTweet(tweetID);
-		if (tweet_hts == null || tweet_hts.length == 0) return graph.getRandomTweet(r);
+		ArrayList<String> tweet_hts = graph.getHashtagsByTweet(tweetID);
+		if (tweet_hts == null || tweet_hts.size() == 0) return graph.getRandomTweet(r);
 
-		String randomHashtag = tweet_hts[r.nextInt(tweet_hts.length)];
-		Long[] hashtag_tws = graph.getTweetsByHashtag(randomHashtag);
-		return hashtag_tws[r.nextInt(hashtag_tws.length)];
+		String randomHashtag = tweet_hts.get(r.nextInt(tweet_hts.size()));
+		ArrayList<Long> hashtag_tws = graph.getTweetsByHashtag(randomHashtag);
+		return hashtag_tws.get(r.nextInt(hashtag_tws.size()));
 	}
 
 	/** Jump to the referenced tweet. */

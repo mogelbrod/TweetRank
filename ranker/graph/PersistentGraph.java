@@ -3,10 +3,9 @@ package graph;
 import java.io.*;
 import java.util.*;
 
-public class Graph {
+public class PersistentGraph {
 	/** Contains all tweets */
 	private Hashtable<Long,Long> tweetSet;
-	private ArrayList<Long> tweetList;
 
 	/** Maps users to tweets */
 	private Hashtable<Long,HashSet<Long>> userTweets;
@@ -85,15 +84,15 @@ public class Graph {
 	
 	/** Constructor. The oldGraph is set to null. */
 	@SuppressWarnings("unchecked")
-	public Graph(String name, String path) {
+	public PersistentGraph(String name, String path) {
 		this.name       = name;
 		this.path       = path;
 		
 		tweetSet = (Hashtable<Long, Long>)loadObject(path, name + "__TweetSet");
 		if ( tweetSet == null ) tweetSet = new Hashtable<Long,Long>();
 		
-		tweetList = new ArrayList<Long>();
-		tweetList.addAll(tweetSet.keySet());
+		/*tweetList = new ArrayList<Long>();
+		tweetList.addAll(tweetSet.keySet());*/
 		
 		mentioned  = (Hashtable<Long, HashSet<Long>>)loadObject(path, name + "__Mention");
 		if (mentioned == null) mentioned = new Hashtable<Long, HashSet<Long>>();
@@ -116,12 +115,12 @@ public class Graph {
 	
 	/** Copy constructor. */
 	@SuppressWarnings("unchecked")
-	public Graph(Graph g, String name, String path) {
+	public PersistentGraph(PersistentGraph g, String name, String path) {
 		this.name = name;
 		this.path = path;
 		
 		tweetSet = (Hashtable<Long, Long>) copyObject(g.tweetSet);
-		tweetList = (ArrayList<Long>) copyObject(g.tweetList);
+		//tweetList = (ArrayList<Long>) copyObject(g.tweetList);
 		mentioned = (Hashtable<Long, HashSet<Long>>) copyObject(g.mentioned);
 		follows = (Hashtable<Long, HashSet<Long>>) copyObject(g.follows);
 		refTweets = (Hashtable<Long, Long>) copyObject(g.refTweets);
@@ -152,8 +151,8 @@ public class Graph {
 	}
 
 	private void addTweet(Long tweetID, Long userID) {
-		if ( !tweetSet.contains(tweetID) )
-			tweetList.add(tweetID);
+		/*if ( !tweetSet.contains(tweetID) )
+			tweetList.add(tweetID);*/
 
 		// In case we add the userID later, we need to override the previous value in tweetSet
 		if (tweetSet.get(tweetID) == null) 
@@ -211,59 +210,6 @@ public class Graph {
 		addTweet(tweetID, null);
 	}
 
-	public Long getRandomTweet(Random r) {
-		return tweetList.get(r.nextInt(tweetList.size()));
-	}
-	
-	public Long getRefTweet(Long tweetID) {
-		if ( tweetID == null ) return null;
-		return refTweets.get(tweetID);
-	}	
-	
-	public String[] getHashtagsByTweet(Long tweetID) {
-		if ( tweetID == null ) return null;
-		Set<String> set = hashtagsByTweet.get(tweetID);
-		if (set == null) return null;
-		else return set.toArray(new String[0]);
-	}
-
-	public Long[] getTweetsByHashtag(String hashtag) {
-		if ( hashtag == null ) return null;
-		Set<Long> set = tweetsByHashtag.get(hashtag);
-		if (set == null) return null;
-		else return set.toArray(new Long[0]);		
-	}	
-
-	public Long[] getUserTweets(Long userID) {
-		if ( userID == null ) return null;
-		Set<Long> set = userTweets.get(userID);
-		if (set == null) return null;
-		else return set.toArray(new Long[0]);
-	}
-
-	public Long[] getMentionedUsers(Long tweetID) {
-		if ( tweetID == null ) return null;
-		Set<Long> set = mentioned.get(tweetID);
-		if (set == null) return null;
-		else return set.toArray(new Long[0]);
-	}
-
-	public Long[] getFollowingUsers(Long userID) {
-		if ( userID == null ) return null;
-		Set<Long> set = follows.get(userID);
-		if (set == null) return null;
-		else return set.toArray(new Long[0]);		
-	}
-
-	public Long getTweetOwner(Long tweetID) {
-		if ( tweetID == null ) return null;
-		return tweetSet.get(tweetID);
-	}
-	
-	public Set<Long> getTweetSet() {
-		return tweetSet.keySet();
-	}
-	
 	public int getNumberOfTweets() {
 		return tweetSet.size();
 	}
@@ -310,5 +256,54 @@ public class Graph {
 	
 	public String getName() {
 		return name;
+	}
+
+	/**
+	 * @return the tweetSet
+	 */
+	public Hashtable<Long, Long> getTweetSet() {
+		return tweetSet;
+	}
+
+	/**
+	 * @return the userTweets
+	 */
+	public Hashtable<Long, HashSet<Long>> getUserTweets() {
+		return userTweets;
+	}
+
+	/**
+	 * @return the mentioned
+	 */
+	public Hashtable<Long, HashSet<Long>> getMentioned() {
+		return mentioned;
+	}
+
+	/**
+	 * @return the follows
+	 */
+	public Hashtable<Long, HashSet<Long>> getFollows() {
+		return follows;
+	}
+
+	/**
+	 * @return the refTweets
+	 */
+	public Hashtable<Long, Long> getRefTweets() {
+		return refTweets;
+	}
+
+	/**
+	 * @return the hashtagsByTweet
+	 */
+	public Hashtable<Long, HashSet<String>> getHashtagsByTweet() {
+		return hashtagsByTweet;
+	}
+
+	/**
+	 * @return the tweetsByHashtag
+	 */
+	public Hashtable<String, HashSet<Long>> getTweetsByHashtag() {
+		return tweetsByHashtag;
 	}
 }

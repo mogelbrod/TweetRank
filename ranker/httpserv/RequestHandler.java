@@ -1,6 +1,6 @@
 package httpserv;
 
-import graph.Graph;
+import graph.PersistentGraph;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -41,9 +41,9 @@ class RequestHandler implements HttpHandler {
 		}
 	};
 
-	private Graph graph;
+	private PersistentGraph graph;
 
-	public RequestHandler(Graph graph) {
+	public RequestHandler(PersistentGraph graph) {
 		this.graph = graph;
 	}
 
