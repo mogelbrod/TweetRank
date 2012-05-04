@@ -2,8 +2,16 @@ package graph;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class PersistentGraph {
+	private final ReentrantLock tweetsLock = new ReentrantLock(true);
+	private final ReentrantLock userTweetsLock = new ReentrantLock(true);
+	private final ReentrantLock mentionedLock = new ReentrantLock(true);
+	private final ReentrantLock followsLock = new ReentrantLock(true);
+	private final ReentrantLock refTweetsLock = new ReentrantLock(true);
+	private final ReentrantLock hashtagsLock = new ReentrantLock(true);
+
 	/** Contains all tweets */
 	private Hashtable<Long,Long> tweetSet;
 
@@ -25,7 +33,7 @@ public class PersistentGraph {
 
 	private String name;
 	private String path;
-	
+
 	private static Object loadObject(String path, String name) {
 		try {
 			FileInputStream file = new FileInputStream(path + "/" + name);
@@ -35,7 +43,7 @@ public class PersistentGraph {
 			return null;
 		}
 	}
-	
+
 	private static void saveObject(String path, String name, Object obj) {
 		try {
 			FileOutputStream fObject   = new FileOutputStream(path + "/" + name);
@@ -46,97 +54,83 @@ public class PersistentGraph {
 			// Ignored exception
 		}		
 	}
-	
-    /**
-     * Returns a copy of the object, or null if the object cannot
-     * be serialized.
-     */
-    public static Object copyObject(Object orig) {
-        Object obj = null;
-        try {
-            // Write the object out to a byte array
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ObjectOutputStream out = new ObjectOutputStream(bos);
-            out.writeObject(orig);
-            out.flush();
-            out.close();
 
-            // Make an input stream from the byte array and read
-            // a copy of the object back in.
-            ObjectInputStream in = new ObjectInputStream(
-                new ByteArrayInputStream(bos.toByteArray()));
-            obj = in.readObject();
-        }
-        catch(IOException e) {
-            e.printStackTrace();
-        }
-        catch(ClassNotFoundException cnfe) {
-            cnfe.printStackTrace();
-        }
-        return obj;
-    }		
-	
+	/**
+	 * Returns a copy of the object, or null if the object cannot
+	 * be serialized.
+	 */
+	public static Object copyObject(Object orig) {
+		Object obj = null;
+		try {
+			// Write the object out to a byte array
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			ObjectOutputStream out = new ObjectOutputStream(bos);
+			out.writeObject(orig);
+			out.flush();
+			out.close();
+
+			// Make an input stream from the byte array and read
+			// a copy of the object back in.
+			ObjectInputStream in = new ObjectInputStream(
+					new ByteArrayInputStream(bos.toByteArray()));
+			obj = in.readObject();
+		}
+		catch(IOException e) {
+			e.printStackTrace();
+		}
+		catch(ClassNotFoundException cnfe) {
+			cnfe.printStackTrace();
+		}
+		return obj;
+	}		
+
 	private static void removeFile(String path, String filename) {
 		File f = new File(path + "/" + filename);
 		if (f.exists() && f.isFile()) f.delete();
 	}	
-	
-	
+
+
 	/** Constructor. The oldGraph is set to null. */
 	@SuppressWarnings("unchecked")
 	public PersistentGraph(String name, String path) {
 		this.name       = name;
 		this.path       = path;
-		
+
 		tweetSet = (Hashtable<Long, Long>)loadObject(path, name + "__TweetSet");
 		if ( tweetSet == null ) tweetSet = new Hashtable<Long,Long>();
-		
-		/*tweetList = new ArrayList<Long>();
-		tweetList.addAll(tweetSet.keySet());*/
-		
+
 		mentioned  = (Hashtable<Long, HashSet<Long>>)loadObject(path, name + "__Mention");
 		if (mentioned == null) mentioned = new Hashtable<Long, HashSet<Long>>();
-		
+
 		follows  = (Hashtable<Long, HashSet<Long>>)loadObject(path, name + "__Follows");
 		if (follows == null) follows = new Hashtable<Long, HashSet<Long>>();
-		
+
 		refTweets  = (Hashtable<Long, Long>)loadObject(path, name + "__RefTweets");
 		if (refTweets == null) refTweets = new Hashtable<Long, Long>();
-		
+
 		userTweets  = (Hashtable<Long, HashSet<Long>>)loadObject(path, name + "__UserTweets");
 		if (userTweets == null) userTweets = new Hashtable<Long, HashSet<Long>>();		
-		
+
 		hashtagsByTweet  = (Hashtable<Long, HashSet<String>>)loadObject(path, name + "__HashtagsByTweet");
 		if (hashtagsByTweet == null) hashtagsByTweet = new Hashtable<Long, HashSet<String>>();	
-		
+
 		tweetsByHashtag  = (Hashtable<String, HashSet<Long>>)loadObject(path, name + "__TweetsByHashtag");
 		if (tweetsByHashtag == null) tweetsByHashtag = new Hashtable<String, HashSet<Long>>();		
 	}
-	
-	/** Copy constructor. */
-	@SuppressWarnings("unchecked")
-	public PersistentGraph(PersistentGraph g, String name, String path) {
-		this.name = name;
-		this.path = path;
-		
-		tweetSet = (Hashtable<Long, Long>) copyObject(g.tweetSet);
-		//tweetList = (ArrayList<Long>) copyObject(g.tweetList);
-		mentioned = (Hashtable<Long, HashSet<Long>>) copyObject(g.mentioned);
-		follows = (Hashtable<Long, HashSet<Long>>) copyObject(g.follows);
-		refTweets = (Hashtable<Long, Long>) copyObject(g.refTweets);
-		userTweets = (Hashtable<Long, HashSet<Long>>) copyObject(g.userTweets);
-		hashtagsByTweet = (Hashtable<Long, HashSet<String>>) copyObject(g.hashtagsByTweet);
-		tweetsByHashtag = (Hashtable<String, HashSet<Long>>) copyObject(g.tweetsByHashtag);
-	}
-	
+
 	public void store() {
-		saveObject(path, name + "__TweetSet", tweetSet);
-		saveObject(path, name + "__Mention", mentioned);
-		saveObject(path, name + "__Follows", follows);
-		saveObject(path, name + "__RefTweets", refTweets);
-		saveObject(path, name + "__UserTweets", userTweets);
-		saveObject(path, name + "__HashtagsByTweet", hashtagsByTweet);
-		saveObject(path, name + "__TweetsByHashtag", tweetsByHashtag);
+		lockAll();
+		try {
+			saveObject(path, name + "__TweetSet", tweetSet);
+			saveObject(path, name + "__Mention", mentioned);
+			saveObject(path, name + "__Follows", follows);
+			saveObject(path, name + "__RefTweets", refTweets);
+			saveObject(path, name + "__UserTweets", userTweets);
+			saveObject(path, name + "__HashtagsByTweet", hashtagsByTweet);
+			saveObject(path, name + "__TweetsByHashtag", tweetsByHashtag);
+		} finally {
+			unlockAll();
+		}
 	}
 
 	/** Delete the files of the current graph. The graph MUST NOT BE USED AGAIN. */
@@ -150,13 +144,31 @@ public class PersistentGraph {
 		removeFile(path, name + "__TweetsByHashtag");
 	}
 
-	private void addTweet(Long tweetID, Long userID) {
-		/*if ( !tweetSet.contains(tweetID) )
-			tweetList.add(tweetID);*/
+	public void lockAll() {
+		userTweetsLock.lock();
+		mentionedLock.lock();
+		followsLock.lock();
+		refTweetsLock.lock();
+		hashtagsLock.lock();		
+	}
 
-		// In case we add the userID later, we need to override the previous value in tweetSet
-		if (tweetSet.get(tweetID) == null) 
-			tweetSet.put(tweetID, userID);
+	public void unlockAll() {
+		mentionedLock.unlock();
+		followsLock.unlock();
+		refTweetsLock.unlock();
+		hashtagsLock.unlock();
+		userTweetsLock.unlock();
+	}
+
+	private void addTweet(Long tweetID, Long userID) {
+		tweetsLock.lock();
+		try{
+			// In case we add the userID later, we need to override the previous value in tweetSet
+			if (tweetSet.get(tweetID) == null) 
+				tweetSet.put(tweetID, userID);
+		} finally {
+			tweetsLock.unlock();
+		}
 	}
 
 	private void addAllTweets(List<Long> tweetIDs, Long userID) {
@@ -165,82 +177,107 @@ public class PersistentGraph {
 	}
 
 	public void addRefTweets(Long tweetID, Long refTweetID) {
-		addTweet(tweetID, null);
-		addTweet(refTweetID, null);
-		refTweets.put(tweetID, refTweetID);
+		refTweetsLock.lock();
+		try{
+			addTweet(tweetID, null);
+			addTweet(refTweetID, null);
+			refTweets.put(tweetID, refTweetID);
+		} finally {
+			refTweetsLock.unlock();
+		}
 	}
 
 	public void addUserTweets(Long userID, List<Long> tweetIDs) {
-		HashSet<Long> curr_list = userTweets.get(userID);
-		if (curr_list == null) curr_list = new HashSet<Long>();
-		curr_list.addAll(tweetIDs);
-		addAllTweets(tweetIDs, userID);
-		userTweets.put(userID, curr_list);
+		userTweetsLock.lock();
+		try{
+			HashSet<Long> curr_list = userTweets.get(userID);
+			if (curr_list == null) curr_list = new HashSet<Long>();
+			curr_list.addAll(tweetIDs);
+			addAllTweets(tweetIDs, userID);
+			userTweets.put(userID, curr_list);
+		} finally {
+			userTweetsLock.unlock();
+		}
 	}
 
 	public void addMentioned(Long tweetID, List<Long> userIDs) {
-		HashSet<Long> curr_list = mentioned.get(tweetID);
-		if (curr_list == null) curr_list = new HashSet<Long>();
-		curr_list.addAll(userIDs);
-		addTweet(tweetID, null);
-		mentioned.put(tweetID, curr_list);
+		mentionedLock.lock();
+		try{
+			HashSet<Long> curr_list = mentioned.get(tweetID);
+			if (curr_list == null) curr_list = new HashSet<Long>();
+			curr_list.addAll(userIDs);
+			addTweet(tweetID, null);
+			mentioned.put(tweetID, curr_list);
+		} finally {
+			mentionedLock.unlock();
+		}
 	}
 
 	public void addFollows(Long userID, List<Long> userIDs) {
-		HashSet<Long> curr_list = follows.get(userID);
-		if (curr_list == null) curr_list = new HashSet<Long>();
-		curr_list.addAll(userIDs);
-		follows.put(userID, curr_list);
+		followsLock.lock();
+		try{
+			HashSet<Long> curr_list = follows.get(userID);
+			if (curr_list == null) curr_list = new HashSet<Long>();
+			curr_list.addAll(userIDs);
+			follows.put(userID, curr_list);
+		} finally {
+			followsLock.unlock();
+		}
 	}
 
 	public void addHashtags(Long tweetID, List<String> hashtags) {
-		HashSet<String> curr_list = hashtagsByTweet.get(tweetID);
-		if (curr_list == null) curr_list = new HashSet<String>();
-		curr_list.addAll(hashtags);
-		hashtagsByTweet.put(tweetID, curr_list);
+		hashtagsLock.lock();
+		try{
+			HashSet<String> curr_list = hashtagsByTweet.get(tweetID);
+			if (curr_list == null) curr_list = new HashSet<String>();
+			curr_list.addAll(hashtags);
+			hashtagsByTweet.put(tweetID, curr_list);
 
-		// Transpose the list
-		for(String ht : hashtags) {
-			HashSet<Long> tweets = tweetsByHashtag.get(ht);
-			if (tweets == null) tweets = new HashSet<Long>();
-			tweets.add(tweetID);
-			tweetsByHashtag.put(ht, tweets);
+			// Transpose the list
+			for(String ht : hashtags) {
+				HashSet<Long> tweets = tweetsByHashtag.get(ht);
+				if (tweets == null) tweets = new HashSet<Long>();
+				tweets.add(tweetID);
+				tweetsByHashtag.put(ht, tweets);
+			}
+
+			addTweet(tweetID, null);
+		} finally {
+			hashtagsLock.unlock();
 		}
-
-		addTweet(tweetID, null);
 	}
 
 	public int getNumberOfTweets() {
 		return tweetSet.size();
 	}
-	
+
 	public int getNumberOfUsers() {
 		return userTweets.size();
 	}
-	
+
 	public int getNumberOfHashtags() {
 		return tweetsByHashtag.size();
 	}
-	
+
 	public double getAverageTweetsPerUser() {
 		if (userTweets.size() == 0) return 0.0;
 		return getNumberOfTweets()/(double)userTweets.size();
 	}
-	
+
 	public double getAverageReferencePerTweet() {
 		if (tweetSet.size() == 0) return 0.0;
 		return refTweets.size()/(double)tweetSet.size();
 	}	
-	
+
 	public double getAverageFriendsPerUser() {
 		if (follows.size() == 0) return 0.0;
-		
+
 		int Tfollowed = 0;
 		for( HashSet<Long> l : follows.values() )
 			Tfollowed += l.size();
 		return Tfollowed/follows.size();
 	}
-	
+
 	public double getAverageMentionsPerTweet() {
 		if( tweetSet.size() == 0 ) return 0.0;
 
@@ -249,11 +286,11 @@ public class PersistentGraph {
 			Tmentions += l.size();
 		return Tmentions/(double)tweetSet.size();
 	}
-	
+
 	public String getPath() {
 		return path;
 	}
-	
+
 	public String getName() {
 		return name;
 	}

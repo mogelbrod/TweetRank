@@ -162,19 +162,14 @@ class RequestHandler implements HttpHandler {
 				sendBadRequestResponse(t, "For RT and RP only one refID is allowed. Size: " + refLongIDs.size());
 				return;
 			}
-			System.out.println(type + ": " + id + " -> " + refLongIDs);
 			graph.addRefTweets(id, refLongIDs.get(0));
 		} else if (type == Type.FW) {
-			System.out.println("FW: " + id + " -> " + refLongIDs);
 			graph.addFollows(id, refLongIDs);
 		} else if (type == Type.MN) {
-			System.out.println("MN: " + id + " -> " + refLongIDs);
 			graph.addMentioned(id, refLongIDs);
 		} else if (type == Type.TW) {
-			System.out.println("TW: " + id + " -> " + refLongIDs);
 			graph.addUserTweets(id, refLongIDs);
 		} else if (type == Type.HT) {
-			System.out.println("HT: " + id + " -> " + refIDs);
 			graph.addHashtags(id, refIDs);
 		} else {
 			sendBadRequestResponse(t, "Unknown type: " + type.toString());

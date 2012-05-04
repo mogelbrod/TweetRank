@@ -73,6 +73,7 @@ public class TweetRanker {
 		for(Long currentID : graph.getTweetSet()) {
 			for(int i = 1; i <= m; ++i) {
 				random = r.nextDouble();
+				addVisit(currentID);
 
 				if ( random <= VISIT_REFERENCED_TWEET )
 					currentID = jumpReferenceTweet(currentID, r);
@@ -84,8 +85,6 @@ public class TweetRanker {
 					currentID = jumpHashtagTweet(currentID, r);
 				else
 					currentID = graph.getRandomTweet(r);
-
-				addVisit(currentID);
 			}
 		}
 

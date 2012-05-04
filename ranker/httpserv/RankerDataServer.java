@@ -39,10 +39,10 @@ public class RankerDataServer {
 
 			TweetRanker ranker = new TweetRanker(new TemporaryGraph(graph));
 			HashMap<Long,Double> pr = ranker.computePageRank();
+			response = response + "TWEETS: " + pr.size() + "\n"; 
 			for(Map.Entry<Long, Double> entry : pr.entrySet()) {
 				response = response + entry.getKey() + "\t" + entry.getValue() + "\n";
 			}
-
 
 			t.sendResponseHeaders(200, response.length());
 			OutputStream os = t.getResponseBody();
