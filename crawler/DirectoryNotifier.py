@@ -70,8 +70,6 @@ def main(argv):
         # SolrNotifier
         snotif.add_tweets(tweets)
         ntweets = ntweets + len(tweets)
-        if ntweets >= 10000:
-            break
 
     snotif.flush()
 

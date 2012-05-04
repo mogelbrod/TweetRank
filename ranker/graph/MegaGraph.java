@@ -62,24 +62,21 @@ public class MegaGraph {
 		tweetList.addAll(tweetSet.keySet());
 	}
 
-	private MegaMap loadOrCreateMegaMap(String name) throws MegaMapException {
-		return manager.createMegaMap(name, true, false);
-	}
 
 	/** Constructor. The oldGraph is set to null. */
-	public static MegaGraph createMegaGraph(String name, String path) throws MegaMapException {
+	public static MegaGraph createMegaGraph(String name, String path, MegaMapManager manager) throws MegaMapException {
 		MegaGraph mg  = new MegaGraph();
-		mg.manager    = MegaMapManager.getMegaMapManager();
+		mg.manager    = manager;
 		mg.oldGraph   = null;
 		mg.name       = name;
 		mg.path       = path;
 		mg.loadOrCreateTweets();
-		mg.mentioned  = mg.loadOrCreateMegaMap(name + "__Mention");
-		mg.follows    = mg.loadOrCreateMegaMap(name + "__Follows");
-		mg.refTweets  = mg.loadOrCreateMegaMap(name + "__RefTweets");
-		mg.userTweets = mg.loadOrCreateMegaMap(name + "__userTweets");
-		mg.hashtagsByTweet = mg.loadOrCreateMegaMap(name + "__HashtagsByTweet");
-		mg.tweetsByHashtag = mg.loadOrCreateMegaMap(name + "__TweetsByHashtag");
+		mg.mentioned  = mg.manager.createMegaMap(name + "__Mention", path, true, false);
+		mg.follows    = mg.manager.createMegaMap(name + "__Follows", path, true, false);
+		mg.refTweets  = mg.manager.createMegaMap(name + "__RefTweets", path, true, false);
+		mg.userTweets = mg.manager.createMegaMap(name + "__userTweets", path, true, false);
+		mg.hashtagsByTweet = mg.manager.createMegaMap(name + "__HashtagsByTweet", path, true, false);
+		mg.tweetsByHashtag = mg.manager.createMegaMap(name + "__TweetsByHashtag", path, true, false);
 		return mg;
 	}
 	
@@ -105,12 +102,12 @@ public class MegaGraph {
 		mg.path       = this.path;
 		mg.name       = name;
 		mg.loadOrCreateTweets();
-		mg.mentioned  = mg.loadOrCreateMegaMap(name + "__Mention");
-		mg.follows    = mg.loadOrCreateMegaMap(name + "__Follows");
-		mg.refTweets  = mg.loadOrCreateMegaMap(name + "__RefTweets");
-		mg.userTweets = mg.loadOrCreateMegaMap(name + "__UserTweets");
-		mg.hashtagsByTweet = mg.loadOrCreateMegaMap(name + "__HashtagsByTweet");
-		mg.tweetsByHashtag = mg.loadOrCreateMegaMap(name + "__TweetsByHashtag");
+		mg.mentioned  = mg.manager.createMegaMap(name + "__Mention", mg.path, true, false);
+		mg.follows    = mg.manager.createMegaMap(name + "__Follows", mg.path, true, false);
+		mg.refTweets  = mg.manager.createMegaMap(name + "__RefTweets", mg.path, true, false);
+		mg.userTweets = mg.manager.createMegaMap(name + "__userTweets", mg.path, true, false);
+		mg.hashtagsByTweet = mg.manager.createMegaMap(name + "__HashtagsByTweet", mg.path, true, false);
+		mg.tweetsByHashtag = mg.manager.createMegaMap(name + "__TweetsByHashtag", mg.path, true, false);
 		
 		// Copy tweetSet and tweetList...
 		mg.tweetSet.putAll(tweetSet);
@@ -140,12 +137,12 @@ public class MegaGraph {
 		// Delete physical files
 		removeFile(path + "/" + name + "__TweetSet");
 		removeFile(path + "/" + name + "__TweetList");
-		manager.deletePersistedMegaMap(name + "__Mention");
-		manager.deletePersistedMegaMap(name + "__Follows");
-		manager.deletePersistedMegaMap(name + "__RefTweets");
-		manager.deletePersistedMegaMap(name + "__UserTweets");
-		manager.deletePersistedMegaMap(name + "__HashtagsByTweet");
-		manager.deletePersistedMegaMap(name + "__TweetsByHashtag");
+		manager.deletePersistedMegaMap(name + "__Mention", path);
+		manager.deletePersistedMegaMap(name + "__Follows", path);
+		manager.deletePersistedMegaMap(name + "__RefTweets", path);
+		manager.deletePersistedMegaMap(name + "__UserTweets", path);
+		manager.deletePersistedMegaMap(name + "__HashtagsByTweet", path);
+		manager.deletePersistedMegaMap(name + "__TweetsByHashtag", path);
 	}
 
 	private void addTweet(Long tweetID, Long userID) {
@@ -163,46 +160,51 @@ public class MegaGraph {
 	}
 
 	public void addRefTweets(Long tweetID, Long refTweetID) {
-		refTweets.put(tweetID, refTweetID);
 		addTweet(tweetID, null);
 		addTweet(refTweetID, null);
+		refTweets.put(tweetID, refTweetID);
 	}
 
 	public void addUserTweets(Long userID, List<Long> tweetIDs) throws MegaMapException {
 		@SuppressWarnings("unchecked")
 		ArrayList<Long> curr_list = (ArrayList<Long>)userTweets.get(userID);
-		if (curr_list == null) userTweets.put(userID, (curr_list = new ArrayList<Long>()));
+		if (curr_list == null) curr_list = new ArrayList<Long>();
 		curr_list.addAll(tweetIDs);
 		addAllTweets(tweetIDs, userID);
+		userTweets.put(userID, curr_list);
 	}
 
 	public void addMentioned(Long tweetID, List<Long> userIDs) throws MegaMapException {
 		@SuppressWarnings("unchecked")
 		ArrayList<Long> curr_list = (ArrayList<Long>)mentioned.get(tweetID);
-		if (curr_list == null) mentioned.put(tweetID, (curr_list = new ArrayList<Long>()));
+		if (curr_list == null) curr_list = new ArrayList<Long>();
 		curr_list.addAll(userIDs);
 		addTweet(tweetID, null);
+		mentioned.put(tweetID, curr_list);
 	}
 
 	public void addFollows(Long userID, List<Long> userIDs) throws MegaMapException {
 		@SuppressWarnings("unchecked")
 		ArrayList<Long> curr_list = (ArrayList<Long>)follows.get(userID);
-		if (curr_list == null) follows.put(userID, (curr_list = new ArrayList<Long>()));
+		if (curr_list == null) curr_list = new ArrayList<Long>();
 		curr_list.addAll(userIDs);
+		follows.put(userID, curr_list);
 	}
 
 	public void addHashtags(Long tweetID, List<String> hashtags) throws MegaMapException {
 		@SuppressWarnings("unchecked")
 		ArrayList<String> curr_list = (ArrayList<String>)hashtagsByTweet.get(tweetID);
-		if (curr_list == null) hashtagsByTweet.put(tweetID, (curr_list = new ArrayList<String>()));
+		if (curr_list == null) curr_list = new ArrayList<String>();
 		curr_list.addAll(hashtags);
+		hashtagsByTweet.put(tweetID, curr_list);
 
 		// Transpose the list
 		for(String ht : hashtags) {
 			@SuppressWarnings("unchecked")
 			ArrayList<Long> tweets = (ArrayList<Long>)tweetsByHashtag.get(ht);
-			if (tweets == null) tweetsByHashtag.put(ht, (tweets = new ArrayList<Long>()));
+			if (tweets == null) tweets = new ArrayList<Long>();
 			tweets.add(tweetID);
+			tweetsByHashtag.put(ht, tweets);
 		}
 
 		addTweet(tweetID, null);

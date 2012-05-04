@@ -1,6 +1,6 @@
 package httpserv;
 
-import graph.MegaGraph;
+import graph.Graph;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -9,7 +9,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.larvalabs.megamap.MegaMapException;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
@@ -42,9 +41,9 @@ class RequestHandler implements HttpHandler {
 		}
 	};
 
-	private MegaGraph graph;
+	private Graph graph;
 
-	public RequestHandler(MegaGraph graph) {
+	public RequestHandler(Graph graph) {
 		this.graph = graph;
 	}
 
@@ -108,7 +107,7 @@ class RequestHandler implements HttpHandler {
 		try {
 			params = parseParams(t.getRequestBody());
 		} catch (Exception e) {
-			sendBadRequestResponse(t, "Bad parameters. " + e.getMessage());
+			sendBadRequestResponse(t, e.getMessage());
 			return;
 		}
 
@@ -158,33 +157,31 @@ class RequestHandler implements HttpHandler {
 			}
 		}
 
-		try {
-			if (type == Type.RT || type == Type.RP) {
-				if (refLongIDs.size() != 1) {
-					sendBadRequestResponse(t, "For RT and RP only one refID is allowed. Size: " + refLongIDs.size());
-					return;
-				}
-				graph.addRefTweets(id, refLongIDs.get(0));
-			} else if (type == Type.FW) {
-				graph.addFollows(id, refLongIDs);
-			} else if (type == Type.MN) {
-				graph.addMentioned(id, refLongIDs);
-			} else if (type == Type.TW) {
-				graph.addUserTweets(id, refLongIDs);
-			} else if (type == Type.HT) {
-				graph.addHashtags(id, refIDs);
-			} else {
-				sendBadRequestResponse(t, "Unknown type: " + type.toString());
+		if (type == Type.RT || type == Type.RP) {
+			if (refLongIDs.size() != 1) {
+				sendBadRequestResponse(t, "For RT and RP only one refID is allowed. Size: " + refLongIDs.size());
 				return;
 			}
-
-			// Send OK response.
-			sendOKResponse(t, "OK!");
-		} catch (MegaMapException e) {
-			e.printStackTrace();
-			sendBadRequestResponse(t, e.getMessage());
+			System.out.println(type + ": " + id + " -> " + refLongIDs);
+			graph.addRefTweets(id, refLongIDs.get(0));
+		} else if (type == Type.FW) {
+			System.out.println("FW: " + id + " -> " + refLongIDs);
+			graph.addFollows(id, refLongIDs);
+		} else if (type == Type.MN) {
+			System.out.println("MN: " + id + " -> " + refLongIDs);
+			graph.addMentioned(id, refLongIDs);
+		} else if (type == Type.TW) {
+			System.out.println("TW: " + id + " -> " + refLongIDs);
+			graph.addUserTweets(id, refLongIDs);
+		} else if (type == Type.HT) {
+			System.out.println("HT: " + id + " -> " + refIDs);
+			graph.addHashtags(id, refIDs);
+		} else {
+			sendBadRequestResponse(t, "Unknown type: " + type.toString());
+			return;
 		}
 
-
+		// Send OK response.
+		sendOKResponse(t, "OK!");
 	}
 }

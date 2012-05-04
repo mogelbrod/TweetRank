@@ -1,16 +1,16 @@
 package httpserv;
 
-import graph.MegaGraph;
+import graph.Graph;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 import ranker.TweetRanker;
 
-import com.larvalabs.megamap.MegaMapException;
-import com.larvalabs.megamap.MegaMapManager;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -21,37 +21,31 @@ public class RankerDataServer {
 	private static String name = "graph";
 	private static String path = "../data/graph/";
 	private HttpServer server;
-	
+
 	private class ComputeHandler implements HttpHandler {
-		private MegaGraph graph = null;
+		private Graph graph = null;
 		private Random r = new Random();
 
-		public ComputeHandler(MegaGraph graph) {
+		public ComputeHandler(Graph graph) {
 			super();
 			this.graph = graph;
 		}
 
 		public void handle(HttpExchange t) throws IOException {
-			Integer code = 400;
 			String response = "";
-			try {
-				Long gid = r.nextLong();
-				if (gid.compareTo(0L) < 0) gid = -gid;
-				
-				MegaGraph cgraph = graph.copy(gid.toString());
-				TweetRanker ranker = new TweetRanker(cgraph);
-				ranker.computePageRank();
+			Long gid = r.nextLong();
+			if (gid.compareTo(0L) < 0) gid = -gid;
 
-				cgraph.delete();
-				response = "OK!";
-				code = 200;
-			} catch (MegaMapException e) {
-				e.printStackTrace();
-				response = e.getMessage();
-				code = 400;
+			Graph cgraph =  new Graph(graph, graph.getPath(), gid.toString());
+
+			TweetRanker ranker = new TweetRanker(cgraph);
+			HashMap<Long,Double> pr = ranker.computePageRank();
+			for(Map.Entry<Long, Double> entry : pr.entrySet()) {
+				response = response + entry.getKey() + "\t" + entry.getValue() + "\n";
 			}
-			
-			t.sendResponseHeaders(code, response.length());
+
+
+			t.sendResponseHeaders(200, response.length());
 			OutputStream os = t.getResponseBody();
 			os.write(response.getBytes());
 			os.close();
@@ -60,12 +54,10 @@ public class RankerDataServer {
 
 	/** This class handles the STOP requests. */
 	private class StopHandler implements HttpHandler {
-		private MegaMapManager MMmanager;
-		private MegaGraph graph;
+		private Graph graph;
 
-		public StopHandler(MegaMapManager MMmanager, MegaGraph graph) {
+		public StopHandler(Graph graph) {
 			super();
-			this.MMmanager = MMmanager;
 			this.graph     = graph;
 		}
 
@@ -79,16 +71,15 @@ public class RankerDataServer {
 			server.stop(0);
 
 			System.out.println("Saving data...");
-			graph.saveTweets();
-			MMmanager.shutdown();
+			graph.store();
 		}
 	}
-	
+
 	/** This class handles the STATUS requests. */
 	private class StatusHandler implements HttpHandler {
-		private MegaGraph graph;
-		
-		public StatusHandler(MegaGraph graph) {
+		private Graph graph;
+
+		public StatusHandler(Graph graph) {
 			super();
 			this.graph = graph;
 		}
@@ -96,34 +87,28 @@ public class RankerDataServer {
 		@Override
 		public void handle(HttpExchange t) throws IOException {
 			String response = "";
-			Integer code = 400;
-			try {
-				response = "Number of tweets: " + graph.getNumberOfTweets() + "\n" + 
-				"Number of users: " + graph.getNumberOfUsers() + "\n" +
-				"Number of hashtags: " + graph.getNumberOfHashtags() + "\n" +
-				"Average tweets per user: " + graph.getAverageTweetsPerUser() + "\n" +
-				"Average friends per user: " + graph.getAverageFriendsPerUser() + "\n" +
-				"Average references per tweet: " + graph.getAverageReferencePerTweet() + "\n" +
-				"Average mentions per tweet: " + graph.getAverageMentionsPerTweet();
-				code = 200;
-			} catch (MegaMapException e) {
-				e.printStackTrace();
-				response = e.getMessage();
-			}
-			
-			t.sendResponseHeaders(code, response.length());
+
+			response = "Number of tweets: " + graph.getNumberOfTweets() + "\n" + 
+			"Number of users: " + graph.getNumberOfUsers() + "\n" +
+			"Number of hashtags: " + graph.getNumberOfHashtags() + "\n" +
+			"Average tweets per user: " + graph.getAverageTweetsPerUser() + "\n" +
+			"Average friends per user: " + graph.getAverageFriendsPerUser() + "\n" +
+			"Average references per tweet: " + graph.getAverageReferencePerTweet() + "\n" +
+			"Average mentions per tweet: " + graph.getAverageMentionsPerTweet();
+
+			t.sendResponseHeaders(200, response.length());
 			OutputStream os = t.getResponseBody();
 			os.write(response.getBytes());
 			os.close();
 		}
 	}
 
-	public RankerDataServer(InetSocketAddress addr, int backlog, MegaGraph graph, MegaMapManager MMmanager) throws IOException {
+	public RankerDataServer(InetSocketAddress addr, int backlog, Graph graph) throws IOException {
 		super();
 		server = HttpServer.create(addr, backlog);
 		server.createContext("/form", new FormHandler());
 		server.createContext("/compute", new ComputeHandler(graph));
-		server.createContext("/stop", new StopHandler(MMmanager, graph));
+		server.createContext("/stop", new StopHandler(graph));
 		server.createContext("/status", new StatusHandler(graph));
 		server.createContext("/", new RequestHandler(graph));
 		server.setExecutor(null);
@@ -133,19 +118,13 @@ public class RankerDataServer {
 		server.start();
 	}
 
-	public static void main(String[] args) {		
-		MegaMapManager MMmanager = null;
-		MegaGraph graph = null;
-		RankerDataServer dserver = null;
-
+	public static void main(String[] args) {	
 		try {
-			MMmanager = MegaMapManager.getMegaMapManager();
-			MMmanager.setDiskStorePath(path);
-
-			graph = MegaGraph.createMegaGraph(name, path);
-			dserver = new RankerDataServer(new InetSocketAddress(RankerDataServer.PORT), 15, graph, MMmanager);
+			Graph graph = new Graph(name, path);
+			RankerDataServer dserver = new RankerDataServer(new InetSocketAddress(RankerDataServer.PORT), 15, graph);
 			dserver.start();
-		} catch (Exception e) {
+			System.out.println("Ranker running...");
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
