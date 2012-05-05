@@ -1,16 +1,16 @@
 #!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 
-from xml.dom.minidom import parseString
 from ProxiedRequester import ProxiedRequester
 from UsersWarehouse import UsersWarehouse
 from UsersFrontier import UsersFrontier
 from Tweet import Tweet
+from OsUtils import get_utc_time
+from EscapeXMLIllegalCharEntities import EscapeXMLIllegalCharEntities
+from xml.dom.minidom import parseString
 from time import sleep
 from random import randint
 from threading import Thread
-from OsUtils import get_utc_time
-from EscapeXMLIllegalCharEntities import EscapeXMLIllegalCharEntities
 
 class TwitterCrawler:
     def __init__(self, datadir, crawl_period = 3600, workers=2):
@@ -18,6 +18,7 @@ class TwitterCrawler:
         self.users  = UsersWarehouse(datadir + '/users/', datadir + '/tweets/')
         self.requester = ProxiedRequester(datadir + '/proxies.txt')
         self.crawl_period = crawl_period
+
 
     def crawl(self, nworkers=1):
         workers = [self.CrawlerWorker(self.frontier, self.users, self.requester, self.crawl_period)
@@ -156,6 +157,9 @@ class TwitterCrawler:
                 for item in tweets_by_uid.iteritems():
                     self.users.add_user_tweets(item[0], item[1])
 
+                # Store user friends & used hashtags
+                self.users.add_user_friends_and_hashtags(user, friends, hashtags)
+
                 # Extend the frontier
                 for nu in new_users:
                     if maxusers is not None and len(self.frontier) >= maxusers: break
@@ -164,8 +168,6 @@ class TwitterCrawler:
 
                 # Add the current user again, to crawl new updates in the future
                 self.frontier.push(user, last_tweet_id, get_utc_time() + self.crawl_period)
-                self.users.add(user, friends, hashtags)
-
 
 tc = TwitterCrawler('../data/')
 tc.crawl()

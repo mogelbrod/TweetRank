@@ -41,7 +41,7 @@ class Worker(Thread):
                 friends = []
                 for l in f:
                     friends.append(int(l))
-                self.rnotif.add_following(user_id, friends)
+                self.rnotif.add_user_friends(user_id, friends)
                 f.close()
             else:
                 pass # Afegir hashtags de l'usuari
@@ -51,32 +51,10 @@ class Worker(Thread):
             sync_print('Thread %d -> Tweets file: %s' % (self.nid, fname))
 
             dom = parse(fname)
-            tweets_by_uid={}
             for tweet in dom.getElementsByTagName('status'):
                 tweet = Tweet(tweet)
-                # Solr notification
-                self.snotif.add_tweet(tweet)
-
-                # Ranker notification
-                if tweet.get_retweeted_status() is not None:
-                    self.rnotif.add_retweet(tweet.get_tweet_id(), tweet.get_retweeted_status().get_tweet_id())
-
-                if tweet.get_replied_id() is not None:
-                    self.rnotif.add_reply(tweet.get_tweet_id(), tweet.get_replied_id())
-
-                if len(tweet.get_mentioned_ids()) > 0:
-                    self.rnotif.add_mentions(tweet.get_tweet_id(), tweet.get_mentioned_ids())
-
-                if len(tweet.get_hashtags()) > 0:
-                    self.rnotif.add_tweet_hashtags(tweet.get_tweet_id(), tweet.get_hashtags())
-
-                if not tweet.get_user_id() in tweets_by_uid:
-                    tweets_by_uid[tweet.get_user_id()] = set([tweet.get_tweet_id()])
-                else:
-                    tweets_by_uid[tweet.get_user_id()].add(tweet.get_tweet_id())
-
-            for item in tweets_by_uid.items():
-                self.rnotif.add_user_tweets(item[0], item[1])
+                self.snotif.notify_tweet(tweet) # Solr notification
+                self.rnotif.notify_tweet(tweet) # Ranker notification
 
             self.snotif.flush()
 

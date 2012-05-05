@@ -11,11 +11,11 @@ class SolrNotifier:
         self.max_pending = max_pending
         self.pending_tweets = set()
 
-    def add_tweet(self, tweet):
+    def notify_tweet(self, tweet):
         self.pending_tweets.add(tweet)
         if len(self.pending_tweets) >= self.max_pending: self.flush()
 
-    def add_tweets(self, tweets):
+    def notify_tweets(self, tweets):
         self.pending_tweets.update(tweets)
         if len(self.pending_tweets) >= self.max_pending: self.flush()
 

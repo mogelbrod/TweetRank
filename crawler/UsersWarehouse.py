@@ -2,10 +2,12 @@
 # -*- coding: utf-8 -*-
 
 from OsUtils import safemkdir, safemv, generate_tmp_fname
+from Tweet import Tweet
+from SolrNotifier import SolrNotifier
+from RankerNotifier import RankerNotifier
 from threading import Lock
 from os import listdir
 from xml.dom.minidom import parse
-from Tweet import Tweet
 from errno import ENOENT
 
 class UsersWarehouse:
@@ -14,6 +16,8 @@ class UsersWarehouse:
         self.usersdir  = users_dir
         self.tweetsdir = tweets_dir
         self.users = set()
+        self.snotif = SolarNotifier()
+        self.rnotif = RankerNotifier()
         self._load()
 
     def _load(self):
@@ -25,12 +29,12 @@ class UsersWarehouse:
                 f = f.split('.')
                 self.users.add(int(f[0]))
         finally:
-            self.lock.release()        
+            self.lock.release()
 
     def __len__(self):
         return len(self.users)
 
-    def __contains__(self, user_id): 
+    def __contains__(self, user_id):
         return user_id in self.users
 
     def __iter__(self):
@@ -41,7 +45,7 @@ class UsersWarehouse:
             yield uid
 
     def _load_user_data(self, user_id):
-        friends, hashtags = set(), dict()        
+        friends, hashtags = set(), dict()
         try:
             # Load friends
             f = open(self.usersdir + ('/%d.friends' % user_id), 'r')
@@ -71,7 +75,7 @@ class UsersWarehouse:
                 f.write('%d\n' % friend_id)
             f.close()
             safemv(ftmp, friends_file)
-            
+
         # Save hashtags
         if len(hashtags) > 0:
             hashtags_file = self.usersdir + ('/%s.hashtags' % user_id)
@@ -84,6 +88,11 @@ class UsersWarehouse:
 
     def add_user_tweets(self, user_id, set_of_tweets):
         if len(set_of_tweets) == 0: return
+
+        self.rnotif.notify_tweets(set_of_tweets) # Ranker notifier
+        self.snotif.notify_tweets(set_of_tweets) # Solr notifier
+        self.snotif.flush()
+
         tweets_file = generate_tmp_fname('%s/%d.tweets' % (self.tweetsdir, user_id))
         f = open(tweets_file, 'w')
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
@@ -92,7 +101,23 @@ class UsersWarehouse:
             f.write(tweet.get_xml() + '\n')
         f.write('</statuses>')
         f.close()
-        
+
+    def add_user_friends_and_hashtags(self, user_id, friends, hashtags):
+        self.rnotif.add_user_friends(user_id, friends)
+        #self.rnotif.add_user_hashtags(user_id, hashtags) # TODO: Implement!
+
+        self.lock.acquire()
+        try:
+            stored_friends, stored_hashtags = self._load_user_data(user_id)
+            stored_friends.update(friends)
+            for ht in hashtags:
+                c = stored_hashtags.get(ht, 0)
+                c = c+1
+                stored_hashtags[ht] = c
+            self._save_user_data(user_id, stored_friends, stored_hashtags)
+        finally:
+            self.lock.release()
+
     def get(self, user_id):
         friends,hashtags=None,None
         self.lock.acquire()
@@ -102,15 +127,3 @@ class UsersWarehouse:
             self.lock.release()
         return friends,hashtags
 
-    def add(self, user_id, friends_ids, hashtags):
-        self.lock.acquire()
-        try:
-            stored_friends, stored_hashtags = self._load_user_data(user_id)
-            stored_friends.update(friends_ids)
-            for ht in hashtags:
-                c = stored_hashtags.get(ht, 0)
-                c = c+1
-                stored_hashtags[ht] = c
-            self._save_user_data(user_id, stored_friends, stored_hashtags)
-        finally:
-            self.lock.release()

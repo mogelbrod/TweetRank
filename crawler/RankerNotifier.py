@@ -43,7 +43,7 @@ class RankerNotifier:
         request = HTTPRequest('http://%s:%d/'%(self.host, self.port),method='POST',body=body)
         return self._sendRequest(request)
 
-    def add_following(self, user_id, followed_user_ids):
+    def add_user_friends(self, user_id, followed_user_ids):
         """This method tells the ranker that `user_id' is following users in `followed_user_ids'"""
         if len(followed_user_ids) == 0:
             return 200
@@ -79,3 +79,25 @@ class RankerNotifier:
         request = HTTPRequest('http://%s:%d/'%(self.host, self.port),method='POST',body=body)
         return self._sendRequest(request)
 
+
+    def notify_tweet(tweet):
+        if tweet is None: return
+
+        if tweet.get_retweeted_status() is not None:
+            self.add_retweet(tweet.get_tweet_id(), tweet.get_retweeted_status().get_tweet_id())
+
+        if tweet.get_replied_id() is not None:
+            self.add_reply(tweet.get_tweet_id(), tweet.get_replied_id())
+
+        if len(tweet.get_mentioned_ids()) > 0:
+            self.add_mentions(tweet.get_tweet_id(), tweet.get_mentioned_ids())
+
+        if len(tweet.get_hashtags()) > 0:
+            self.add_tweet_hashtags(tweet.get_tweet_id(), tweet.get_hashtags())
+
+        self.add_user_tweets(tweet.get_user_id(), [tweet.get_tweet_id()])
+
+
+    def notify_tweets(tweets):
+        for tweet in tweets:
+            self.notify_tweet(tweet)

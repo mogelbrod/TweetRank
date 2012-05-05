@@ -98,6 +98,10 @@ public class TemporaryGraph {
 	public Set<Long> getTweetSet() {
 		return tweetSet.keySet();
 	}
+	
+	public List<Long> getTweetList() {
+		return tweetList;
+	}	
 
 	public int getNumberOfTweets() {
 		return tweetSet.size();
