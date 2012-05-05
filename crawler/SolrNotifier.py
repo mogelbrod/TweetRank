@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from Tweet import Tweet
-import solr
+import solr, time
 
 class SolrNotifier:
     def __init__(self, host = '176.9.149.66', port = 8983, max_pending=1000):
@@ -34,6 +34,19 @@ class SolrNotifier:
                               user_statuses=tw.get_statuses_count(),
                               retweet_count=tw.get_retweeted_count()) )
         conn.add_many(docs)
-        conn.commit()
+
+        trycommit = True
+        while trycommit:
+            try:
+                conn.commit()
+                trycommit = False
+            except solr.SolrException as ex:
+                if ex.httpcode == 503:
+                    trycommit = True
+                    time.sleep(2)
+                else: trycommit = False
+            except:
+                trycommit = False
+
         conn.close()
         self.pending_tweets = set()
