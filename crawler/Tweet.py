@@ -26,7 +26,7 @@ class Tweet:
         return (other is not None and self.id == other.id)
 
     def __ne__(self, other):
-        return (other is not None and self.id != other.id)    
+        return (other is not None and self.id != other.id)
 
     def __lt__(self, other):
         return (other is not None and self.id < other.id)
@@ -133,10 +133,10 @@ class Tweet:
             self.date = rfc822.parsedate_tz(self.date)
             self.date = datetime.datetime(self.date[0], self.date[1], self.date[2],
                                           self.date[3], self.date[4], self.date[5], 0, pytz.utc)
-        
+
     def get_tweet_id(self):
         return self.id
-        
+
     def get_user_id(self):
         return self.user_id
 
@@ -159,7 +159,7 @@ class Tweet:
         return self.user_nick
 
     def get_user_name(self):
-        return self.user_name    
+        return self.user_name
 
     def get_followers_count(self):
         return self.followers_count

@@ -7,7 +7,6 @@ from xml.dom.minidom import parse
 import sys
 
 
-
 def usage():
     print 'python DirectoryNotifier.py data_dir'
 

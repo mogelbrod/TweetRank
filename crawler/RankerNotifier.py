@@ -5,7 +5,6 @@ from tornado.httpclient import AsyncHTTPClient, HTTPClient, HTTPError, HTTPReque
 
 class RankerNotifier:
     def __init__(self, host = "localhost", port = 4711):
-        AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
         self.http_client = HTTPClient()
         self.host = host
         self.port = port
@@ -17,7 +16,7 @@ class RankerNotifier:
             return response.code
         except HTTPError as e:
             return e.code
-        except Exception:
+        except:
             return 999
 
     def add_retweet(self, tweet_id, retweeted_id):

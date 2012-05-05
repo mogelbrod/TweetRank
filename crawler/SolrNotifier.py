@@ -15,7 +15,7 @@ class SolrNotifier:
         self.pending_tweets.update(tweets)
         if len(self.pending_tweets) < self.max_pending: return
         self.flush()
-            
+
     def flush(self):
         conn = solr.SolrConnection('http://%s:%d/solr' % (self.host,self.port))
         docs = []

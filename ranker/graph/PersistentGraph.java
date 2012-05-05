@@ -164,7 +164,8 @@ public class PersistentGraph {
 		tweetsLock.lock();
 		try{
 			// In case we add the userID later, we need to override the previous value in tweetSet
-			if (tweetSet.get(tweetID) == null) 
+			Long cuID = tweetSet.get(tweetID);
+			if ( cuID == null || cuID.equals(-1L) ) 
 				tweetSet.put(tweetID, userID);
 		} finally {
 			tweetsLock.unlock();
@@ -179,8 +180,8 @@ public class PersistentGraph {
 	public void addRefTweets(Long tweetID, Long refTweetID) {
 		refTweetsLock.lock();
 		try{
-			addTweet(tweetID, null);
-			addTweet(refTweetID, null);
+			addTweet(tweetID, -1L);
+			addTweet(refTweetID, -1L);
 			refTweets.put(tweetID, refTweetID);
 		} finally {
 			refTweetsLock.unlock();
@@ -206,7 +207,7 @@ public class PersistentGraph {
 			HashSet<Long> curr_list = mentioned.get(tweetID);
 			if (curr_list == null) curr_list = new HashSet<Long>();
 			curr_list.addAll(userIDs);
-			addTweet(tweetID, null);
+			addTweet(tweetID, -1L);
 			mentioned.put(tweetID, curr_list);
 		} finally {
 			mentionedLock.unlock();
@@ -241,7 +242,7 @@ public class PersistentGraph {
 				tweetsByHashtag.put(ht, tweets);
 			}
 
-			addTweet(tweetID, null);
+			addTweet(tweetID, -1L);
 		} finally {
 			hashtagsLock.unlock();
 		}
