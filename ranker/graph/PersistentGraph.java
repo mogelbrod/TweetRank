@@ -1,10 +1,14 @@
 package graph;
 
+
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
+import org.apache.log4j.Logger;
 
 public class PersistentGraph {
+	private static final Logger logger = Logger.getLogger("ranker.logger");
+	
 	private final ReentrantLock tweetsLock = new ReentrantLock(true);
 	private final ReentrantLock userTweetsLock = new ReentrantLock(true);
 	private final ReentrantLock mentionedLock = new ReentrantLock(true);
@@ -35,13 +39,17 @@ public class PersistentGraph {
 	private String path;
 
 	private static Object loadObject(String path, String name) {
+		Object robject = null;
 		try {
 			FileInputStream file = new FileInputStream(path + "/" + name);
 			ObjectInputStream obj = new ObjectInputStream(file);
-			return obj.readObject();
-		} catch ( Exception e ) {
-			return null;
+			robject = obj.readObject();
+		} catch (FileNotFoundException e) {
+			logger.info("File " + name + " has been created!");
+		} catch (Throwable t) {
+			logger.fatal("Error loading the persistent graph.", t);
 		}
+		return robject;
 	}
 
 	private static void saveObject(String path, String name, Object obj) {
@@ -50,45 +58,10 @@ public class PersistentGraph {
 			ObjectOutputStream oObject = new ObjectOutputStream(fObject);
 			oObject.writeObject(obj);
 			oObject.close();
-		} catch (IOException e) {
-			// Ignored exception
+		} catch (Throwable t) {
+			logger.error("Error saving the file " + path + "/" + name + "!", t);
 		}		
 	}
-
-	/**
-	 * Returns a copy of the object, or null if the object cannot
-	 * be serialized.
-	 */
-	public static Object copyObject(Object orig) {
-		Object obj = null;
-		try {
-			// Write the object out to a byte array
-			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			ObjectOutputStream out = new ObjectOutputStream(bos);
-			out.writeObject(orig);
-			out.flush();
-			out.close();
-
-			// Make an input stream from the byte array and read
-			// a copy of the object back in.
-			ObjectInputStream in = new ObjectInputStream(
-					new ByteArrayInputStream(bos.toByteArray()));
-			obj = in.readObject();
-		}
-		catch(IOException e) {
-			e.printStackTrace();
-		}
-		catch(ClassNotFoundException cnfe) {
-			cnfe.printStackTrace();
-		}
-		return obj;
-	}		
-
-	private static void removeFile(String path, String filename) {
-		File f = new File(path + "/" + filename);
-		if (f.exists() && f.isFile()) f.delete();
-	}	
-
 
 	/** Constructor. The oldGraph is set to null. */
 	@SuppressWarnings("unchecked")
@@ -133,17 +106,6 @@ public class PersistentGraph {
 		}
 	}
 
-	/** Delete the files of the current graph. The graph MUST NOT BE USED AGAIN. */
-	public void deletePersistentStorage() {
-		removeFile(path, name + "__TweetSet");
-		removeFile(path, name + "__Mention");
-		removeFile(path, name + "__Follows");
-		removeFile(path, name + "__RefTweets");
-		removeFile(path, name + "__UserTweets");
-		removeFile(path, name + "__HashtagsByTweet");
-		removeFile(path, name + "__TweetsByHashtag");
-	}
-
 	public void lockAll() {
 		userTweetsLock.lock();
 		mentionedLock.lock();
@@ -167,6 +129,8 @@ public class PersistentGraph {
 			Long cuID = tweetSet.get(tweetID);
 			if ( cuID == null || cuID.equals(-1L) ) 
 				tweetSet.put(tweetID, userID);
+		} catch (Throwable t) {
+			logger.error("Error adding a tweet.", t);
 		} finally {
 			tweetsLock.unlock();
 		}
@@ -183,6 +147,8 @@ public class PersistentGraph {
 			addTweet(tweetID, -1L);
 			addTweet(refTweetID, -1L);
 			refTweets.put(tweetID, refTweetID);
+		} catch (Throwable t) {
+			logger.error("Error adding a reference.", t);
 		} finally {
 			refTweetsLock.unlock();
 		}
@@ -196,6 +162,8 @@ public class PersistentGraph {
 			curr_list.addAll(tweetIDs);
 			addAllTweets(tweetIDs, userID);
 			userTweets.put(userID, curr_list);
+		} catch (Throwable t) {
+			logger.error("Error adding a user tweet.", t);
 		} finally {
 			userTweetsLock.unlock();
 		}
@@ -209,6 +177,8 @@ public class PersistentGraph {
 			curr_list.addAll(userIDs);
 			addTweet(tweetID, -1L);
 			mentioned.put(tweetID, curr_list);
+		} catch (Throwable t) {
+			logger.error("Error adding a mention.", t);
 		} finally {
 			mentionedLock.unlock();
 		}
@@ -221,6 +191,8 @@ public class PersistentGraph {
 			if (curr_list == null) curr_list = new HashSet<Long>();
 			curr_list.addAll(userIDs);
 			follows.put(userID, curr_list);
+		} catch (Throwable t) {
+			logger.error("Error adding a friend.", t);
 		} finally {
 			followsLock.unlock();
 		}
@@ -243,6 +215,8 @@ public class PersistentGraph {
 			}
 
 			addTweet(tweetID, -1L);
+		} catch (Throwable t) {
+			logger.error("Error adding a hashtag.", t);
 		} finally {
 			hashtagsLock.unlock();
 		}

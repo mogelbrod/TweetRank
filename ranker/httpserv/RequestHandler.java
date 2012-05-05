@@ -12,9 +12,12 @@ import java.util.HashMap;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
-class RequestHandler implements HttpHandler {
-	/** This method parses the body of a POST request and extracts the parameters. */
+import org.apache.log4j.Logger;
 
+public class RequestHandler implements HttpHandler {
+	private static final Logger logger = Logger.getLogger("ranker.logger");
+	
+	/** This method parses the body of a POST request and extracts the parameters. */
 	public enum Type {
 		// /RT (Retweet relationship) -> Tweet 'ID' is a retweet of tweet 'RefID'
 		// /RP (Reply relationship)   -> Tweet 'ID' is a reply to tweet 'RefID'
@@ -72,7 +75,7 @@ class RequestHandler implements HttpHandler {
 	/** This method is used to send a Bad Reponse to the client. */
 	private static void sendBadRequestResponse(HttpExchange t, String message) {
 		try {
-			System.err.println(message);
+			logger.warn(message);
 			t.sendResponseHeaders(400, message.length());
 			t.getResponseBody().write(message.getBytes());
 			t.getResponseBody().close();
@@ -98,7 +101,7 @@ class RequestHandler implements HttpHandler {
 
 		// Check POST request
 		if ( !t.getRequestMethod().toUpperCase().equals("POST") ) {
-			sendBadRequestResponse(t, "Only POST requests valid.");
+			sendBadRequestResponse(t, "Only POST requests are valid.");
 			return;
 		}
 
@@ -162,19 +165,19 @@ class RequestHandler implements HttpHandler {
 				sendBadRequestResponse(t, "For RT and RP only one refID is allowed. Size: " + refLongIDs.size());
 				return;
 			}
-			//System.out.println(type + ": "+ id + " " + refLongIDs);
+			logger.debug(type + ": "+ id + " " + refLongIDs.get(0));
 			graph.addRefTweets(id, refLongIDs.get(0));
 		} else if (type == Type.FW) {
-			//System.out.println(type + ": "+ id + " " + refLongIDs);
+			logger.debug(type + ": "+ id + " " + refLongIDs);
 			graph.addFollows(id, refLongIDs);
 		} else if (type == Type.MN) {
-			//System.out.println(type + ": "+ id + " " + refLongIDs);
+			logger.debug(type + ": "+ id + " " + refLongIDs);
 			graph.addMentioned(id, refLongIDs);
 		} else if (type == Type.TW) {
-			//System.out.println(type + ": "+ id + " " + refLongIDs);
+			logger.debug(type + ": "+ id + " " + refLongIDs);
 			graph.addUserTweets(id, refLongIDs);
 		} else if (type == Type.HT) {
-			//System.out.println(type + ": "+ id + " " + refLongIDs);
+			logger.debug(type + ": "+ id + " " + refIDs);
 			graph.addHashtags(id, refIDs);
 		} else {
 			sendBadRequestResponse(t, "Unknown type: " + type.toString());

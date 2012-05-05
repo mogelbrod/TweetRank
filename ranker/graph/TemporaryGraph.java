@@ -2,7 +2,11 @@ package graph;
 
 import java.util.*;
 
+import org.apache.log4j.Logger;
+
 public class TemporaryGraph {
+	private static final Logger logger = Logger.getLogger("ranker.logger");
+	
 	/** Contains all tweets */
 	private Hashtable<Long,Long> tweetSet;
 	private ArrayList<Long> tweetList;
@@ -44,12 +48,15 @@ public class TemporaryGraph {
 			follows = convertHashtable(sgraph.getFollows());
 			hashtagsByTweet = convertHashtable(sgraph.getHashtagsByTweet());
 			tweetsByHashtag = convertHashtable(sgraph.getTweetsByHashtag());
+		} catch (Throwable t) {
+			logger.error("Error creating a new temporary graph.", t);			
 		} finally {
 			sgraph.unlockAll();
 		}
 	}
 
 	public Long getRandomTweet(Random r) {
+		if (tweetList.size() == 0) return null;
 		return tweetList.get(r.nextInt(tweetList.size()));
 	}
 
