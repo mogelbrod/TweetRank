@@ -71,7 +71,7 @@ class Tweet:
         self.hashtags = []
         for elem in dom.getElementsByTagName('hashtag'):
             if elem.parentNode.parentNode.parentNode.tagName == 'status':
-                self.hashtags.append(elem.getElementsByTagName('text')[0].firstChild.data.encode('utf-8'))
+                self.hashtags.append(elem.getElementsByTagName('text')[0].firstChild.data)
 
     def _init_retweeted_status(self, dom):
         self.retweeted_status = None

@@ -92,8 +92,8 @@ def main(argv):
     tweets_dir = data_dir + '/tweets/'
     users_dir  = data_dir + '/users/'
 
-    fulist = listdir(users_dir);
-    ftlist = listdir(tweets_dir);
+    fulist = listdir(users_dir)
+    ftlist = listdir(tweets_dir)
 
     fulist.sort()
     ftlist.sort()

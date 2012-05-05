@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 
 from threading import Lock
@@ -23,8 +23,8 @@ class UsersFrontier:
             for l in f:
                 l = l.strip()
                 if l[0] == '#': continue
-                
-                l= l.split() 
+
+                l= l.split()
                 if int(l[0]) not in self.users_in_frontier:
                     self.frontier.append( (int(l[2]), int(l[1]), int(l[0])) ) # Next_Query_Time, Last_Tweet_ID, UserID
                     self.users_in_frontier.add( int(l[0]) )
@@ -71,7 +71,7 @@ class UsersFrontier:
                 self.size = self.size + 1
         finally:
             self.lock.release()
-        if self.ops % self.save_ops == 0: self._save()    
+        if self.ops % self.save_ops == 0: self._save()
 
     def pop(self):
         self.lock.acquire()
