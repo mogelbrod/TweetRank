@@ -12,7 +12,7 @@ from threading import Thread
 from OsUtils import get_utc_time
 from EscapeXMLIllegalCharEntities import EscapeXMLIllegalCharEntities
 
-class TwitterCrawler:            
+class TwitterCrawler:
     def __init__(self, datadir, crawl_period = 3600, workers=2):
         self.frontier = UsersFrontier(datadir + '/frontier.txt')
         self.users  = UsersWarehouse(datadir + '/users/', datadir + '/tweets/')
@@ -33,11 +33,10 @@ class TwitterCrawler:
             self.users  = users
             self.requester = requester
             self.crawl_period = crawl_period
-            
+
         def run(self):
             print('Thread %d: starting...' % self.ident)
             self.crawl()
-                
 
         def get_twitter_multipage_query(self, query, count = 200, maxpages=16):
             page = 1
@@ -57,7 +56,7 @@ class TwitterCrawler:
                     for tweet in tweets:
                         result.append(Tweet(tweet))
                     if len(tweets) == 0 or page == maxpages: return result # OK
-                    else: page = page + 1      # Next page    
+                    else: page = page + 1      # Next page
 
         def get_twitter_singlepage_query(self, query):
             while True:
@@ -166,8 +165,8 @@ class TwitterCrawler:
                 # Add the current user again, to crawl new updates in the future
                 self.frontier.push(user, last_tweet_id, get_utc_time() + self.crawl_period)
                 self.users.add(user, friends, hashtags)
-            
+
 
 tc = TwitterCrawler('../data/')
 tc.crawl()
-    
+

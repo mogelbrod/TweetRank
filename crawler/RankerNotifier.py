@@ -4,7 +4,7 @@
 from tornado.httpclient import AsyncHTTPClient, HTTPClient, HTTPError, HTTPRequest
 
 class RankerNotifier:
-    def __init__(self, host = "localhost", port = 4711):
+    def __init__(self, host = "176.9.149.66", port = 4711):
         self.http_client = HTTPClient()
         self.host = host
         self.port = port
