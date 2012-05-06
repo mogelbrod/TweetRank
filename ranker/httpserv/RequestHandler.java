@@ -75,7 +75,7 @@ public class RequestHandler implements HttpHandler {
 	/** This method is used to send a Bad Reponse to the client. */
 	private static void sendBadRequestResponse(HttpExchange t, String message) {
 		try {
-			logger.warn(message);
+			logger.debug(message);
 			t.sendResponseHeaders(400, message.length());
 			t.getResponseBody().write(message.getBytes());
 			t.getResponseBody().close();

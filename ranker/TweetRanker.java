@@ -80,6 +80,7 @@ public class TweetRanker {
 				ranker.setTemporaryGraph(new TemporaryGraph(graph));  // Creates a new temporary graph 
 				HashMap<Long,Double> pr = ranker.compute();           // Start computation!
 				if ( pr != null ) { // If everything was OK, save the result on a file
+					logger.info("Saving TweetRank to temporal file...");
 					String tmpFile = "/tmp/" + generateTemporalFilename(); 
 					FileWriter fWriter = new FileWriter(tmpFile); 
 					BufferedWriter bWriter = new BufferedWriter(fWriter);
@@ -87,7 +88,7 @@ public class TweetRanker {
 						bWriter.write(entry.getKey() + "\t" + entry.getValue() + "\n");
 					bWriter.close();
 					if ( !renameFile(tmpFile, RankingName) ) 
-						logger.error("Error moving the TweetRank file.");
+						logger.error("Error moving the temporal file to the final location.");
 				}
 			} catch (TweetRankComputer.ConcurrentComputationException e) {
 				logger.info("A TweetRank computation is already ongoing.");
