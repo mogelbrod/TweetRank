@@ -62,8 +62,8 @@ public class StatusHandler implements HttpHandler {
 			OutputStream os = t.getResponseBody();
 			os.write(response.getBytes());
 			os.close();
-		} catch ( Exception th ) {
-			logger.error(th);
+		} catch ( Throwable th ) {
+			logger.error("Error during status recopilation.", th);
 			String response = "Error during status recopilation.";
 			t.sendResponseHeaders(400, response.length());
 			OutputStream os = t.getResponseBody();

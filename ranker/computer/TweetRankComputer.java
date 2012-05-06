@@ -326,7 +326,7 @@ public class TweetRankComputer {
 	public Time getElapsedTime() {
 		if ( state == State.WORKING ) {
 			return new Time((new Date()).getTime() - StartEndDate[0].getTime());
-		} else if ( StartEndDate[1].compareTo(StartEndDate[0]) > 0 ) {
+		} else if ( StartEndDate[1] != null && StartEndDate[1].compareTo(StartEndDate[0]) > 0 ) {
 			return new Time(StartEndDate[1].getTime() - StartEndDate[0].getTime());
 		} else {
 			return null;
