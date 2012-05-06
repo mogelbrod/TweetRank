@@ -4,30 +4,57 @@ import graph.PersistentGraph;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Date;
+
+import utils.Time;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import computer.TweetRankComputer;
 
 /** This class handles the STATUS requests. */
 public class StatusHandler implements HttpHandler {
-	private PersistentGraph graph;
+	private PersistentGraph pgraph;
+	private TweetRankComputer trcomputer;
 
-	public StatusHandler(PersistentGraph graph) {
+	public StatusHandler(PersistentGraph pgraph, TweetRankComputer trcomputer) {
 		super();
-		this.graph = graph;
+		this.pgraph = pgraph;
+		this.trcomputer = trcomputer;
 	}
 
 	@Override
 	public void handle(HttpExchange t) throws IOException {
 		String response = "";
 
-		response = "Number of tweets: " + graph.getNumberOfTweets() + "\n" + 
-		"Number of users: " + graph.getNumberOfUsers() + "\n" +
-		"Number of hashtags: " + graph.getNumberOfHashtags() + "\n" +
-		"Average tweets per user: " + graph.getAverageTweetsPerUser() + "\n" +
-		"Average friends per user: " + graph.getAverageFriendsPerUser() + "\n" +
-		"Average references per tweet: " + graph.getAverageReferencePerTweet() + "\n" +
-		"Average mentions per tweet: " + graph.getAverageMentionsPerTweet();
+		response = "Persistent graph info:\n======================\n" +
+		"Number of tweets: " + pgraph.getNumberOfTweets() + "\n" + 
+		"Number of users: " + pgraph.getNumberOfUsers() + "\n" +
+		"Number of hashtags: " + pgraph.getNumberOfHashtags() + "\n" +
+		"Average tweets per user: " + pgraph.getAverageTweetsPerUser() + "\n" +
+		"Average friends per user: " + pgraph.getAverageFriendsPerUser() + "\n" +
+		"Average references per tweet: " + pgraph.getAverageReferencePerTweet() + "\n" +
+		"Average mentions per tweet: " + pgraph.getAverageMentionsPerTweet() + "\n\n";
+		
+		response += "TweetRank computation:\n======================\n";
+		TweetRankComputer.State state = trcomputer.getState();
+		long NTweets = trcomputer.getNumberOfTweets();
+		Date enddate = trcomputer.getEndDate();
+		Time elapsed = trcomputer.getElapsedTime();
+		
+		if ( state == TweetRankComputer.State.WORKING ) {
+			response += "State: WORKING\n";
+			response += "Number of tweets: " + NTweets + "\n";
+			response += "Last computation: " + (enddate == null ? "Never" : Time.formatDate("yyyy/MM/dd HH:mm:ss", enddate)) + "\n";
+			response += "Elapsed time: " + elapsed + "\n";
+			response += "Completed: " + trcomputer.getPercentageOfCompletion()*100.0 + "%\n";
+			response +=	"Expected remaining time: " + trcomputer.getRemainingTime(); 
+		} else {
+			response += "State: IDLE\n";
+			response += "Number of tweets: " + NTweets + "\n";
+			response += "Last computation: " + (enddate == null ? "Never" : Time.formatDate("yyyy/MM/dd HH:mm:ss", enddate)) + "\n";
+			if ( elapsed != null )	response += "Elapsed time: " + elapsed;
+		}
 
 		t.sendResponseHeaders(200, response.length());
 		OutputStream os = t.getResponseBody();

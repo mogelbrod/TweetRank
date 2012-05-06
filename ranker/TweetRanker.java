@@ -109,7 +109,7 @@ public class TweetRanker {
 		this.graph = graph;
 		this.ranker = new TweetRankComputer();
 		server = HttpServer.create(addr, backlog);
-		server.createContext("/status", new StatusHandler(graph));
+		server.createContext("/status", new StatusHandler(this.graph, this.ranker));
 		server.createContext("/", new RequestHandler(graph));
 		server.setExecutor(null);
 	}
