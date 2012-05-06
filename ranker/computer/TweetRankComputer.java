@@ -320,7 +320,7 @@ public class TweetRankComputer {
 		if (completed < 1E-5) return new Time();
 		
 		long elapsed = (new Date()).getTime() - StartEndDate[0].getTime();
-		return new Time((long)(elapsed/completed));
+		return new Time((long)(elapsed/completed) - elapsed);
 	}
 	
 	public Time getElapsedTime() {
