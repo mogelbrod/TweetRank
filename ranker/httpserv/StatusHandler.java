@@ -29,9 +29,7 @@ public class StatusHandler implements HttpHandler {
 	@Override
 	public void handle(HttpExchange t) throws IOException {
 		try {
-			String response = "";
-
-			response = "Persistent graph info:\n======================\n" +
+			String response = "Persistent graph info:\n======================\n" +
 			"Number of tweets: " + pgraph.getNumberOfTweets() + "\n" + 
 			"Number of users: " + pgraph.getNumberOfUsers() + "\n" +
 			"Number of hashtags: " + pgraph.getNumberOfHashtags() + "\n" +
@@ -64,7 +62,7 @@ public class StatusHandler implements HttpHandler {
 			OutputStream os = t.getResponseBody();
 			os.write(response.getBytes());
 			os.close();
-		} catch ( Throwable th ) {
+		} catch ( Exception th ) {
 			logger.error(th);
 			String response = "Error during status recopilation.";
 			t.sendResponseHeaders(400, response.length());
