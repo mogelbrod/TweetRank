@@ -86,9 +86,10 @@ public class TweetRanker {
 					for(Map.Entry<Long, Double> entry : pr.entrySet())
 						bWriter.write(entry.getKey() + "\t" + entry.getValue() + "\n");
 					bWriter.close();
-					renameFile(tmpFile, RankingName);
+					if ( !renameFile(tmpFile, RankingName) ) 
+						logger.error("Error moving the TweetRank file.");
 				}
-			} catch ( TweetRankComputer.ConcurrentComputationException e ) {
+			} catch (TweetRankComputer.ConcurrentComputationException e) {
 				logger.info("A TweetRank computation is already ongoing.");
 			} catch (Throwable t) {
 				logger.error("Error during the TweetRank computation.", t);
