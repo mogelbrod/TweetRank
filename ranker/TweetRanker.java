@@ -30,7 +30,7 @@ public class TweetRanker {
 	private static String name = "graph";
 	private static String path = "../data/graph/";
 	//private static String RankingName = "../data/tweetrank.tr";
-	private static String RankingName = "/home/ir12/apache-solr-3.6.0/example/solr/data";
+	private static String RankingName = "/home/ir12/apache-solr-3.6.0/example/solr/data/external_rank";
 	private static long RankingPeriod = MinToMilli(60);  
 	private static long StoringPeriod = MinToMilli(20);
 

@@ -281,7 +281,7 @@ public class TweetRankComputer {
 		// Normalize the counters
 		TreeMap<Long,Double> norm = new TreeMap<Long,Double>();
 		for(Entry<Long,Long> entry : merge.entrySet()) {
-			Double val = MinRange + (MaxRange - 1)*(entry.getValue() - min)/(double)(max - min);
+			Double val = MinRange + (MaxRange - MinRange)*(entry.getValue() - min)/(double)(max - min);
 			logger.debug("id="+entry.getKey()+", oval=" + entry.getValue() + ", nval=" + val);
 			norm.put(entry.getKey(),  val);
 			//norm.put(entry.getKey(), entry.getValue()/sum.doubleValue());
