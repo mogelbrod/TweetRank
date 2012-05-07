@@ -92,12 +92,10 @@ public class TweetRanker {
 				ranker.setTemporaryGraph(new TemporaryGraph(graph));  // Creates a new temporary graph 
 				TreeMap<Long,Double> pr = ranker.compute();           // Start computation!
 				if ( pr != null ) { // If everything was OK, save the result on a file
-					logger.info("Saving TweetRank to temporal file...");
-					//String tmpFile = RankingName + "_" + generateTemporalFilename();
-					
+					logger.info("Saving TweetRank file...");
 					PrintWriter pwriter = new PrintWriter(new FileWriter(RankingName));
 					for(Map.Entry<Long, Double> entry : pr.entrySet())
-						pwriter.println(entry.getKey() + "=" + 100.0*entry.getValue());
+						pwriter.println(entry.getKey() + "=" + entry.getValue());
 					pwriter.close();
 					/*if ( !renameFile(tmpFile, RankingName) ) 
 						logger.error("Error moving the temporal file to the final location.");*/

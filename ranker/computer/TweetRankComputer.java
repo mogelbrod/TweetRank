@@ -234,7 +234,7 @@ public class TweetRankComputer {
 		ArrayList<HashMap<Long,Long>> visitCounters = new ArrayList<HashMap<Long,Long>>();
 		for(int widx = 0; widx < NUM_WORK_THREADS; ++widx) 
 			visitCounters.add(workerThreads[widx].getCounter());
-		TreeMap<Long,Double> tweetrank = MergeAndNormalizeCounters(visitCounters);
+		TreeMap<Long,Double> tweetrank = MergeAndNormalizeCounters(visitCounters, 0L, 10L);
 		
 		// Force the destruction of worker threads.
 		for(int widx = 0; widx < NUM_WORK_THREADS; ++widx)
@@ -256,23 +256,36 @@ public class TweetRankComputer {
 	 * @param visitCounters Collection of counters to merge and normalize.
 	 * @return Returns a merged and normalized HashMap, so that the sum of all values is 1.0.
 	 */
-	private static TreeMap<Long,Double> MergeAndNormalizeCounters(Collection<HashMap<Long,Long>> visitCounters) {
+	private static TreeMap<Long,Double> MergeAndNormalizeCounters(Collection<HashMap<Long,Long>> visitCounters,
+			Long MinRange, Long MaxRange) {
 		// Merge all the counters
 		TreeMap<Long,Long> merge = new TreeMap<Long,Long>();
 		Long sum = 0L;
+		Long min = null;
+		Long max = null;
 		for(HashMap<Long,Long> counter : visitCounters) {
 			for(Entry<Long,Long> entry : counter.entrySet()) {
 				Long c = merge.get(entry.getKey());
-				if ( c == null ) merge.put(entry.getKey(), entry.getValue());
-				else merge.put(entry.getKey(), c + entry.getValue());
+				if ( c == null )  c = entry.getValue();
+				else c = c + entry.getValue();
 				sum += entry.getValue();
+				if ( min == null || min.compareTo(c) > 0 ) min = new Long(c);
+				if ( max == null || max.compareTo(c) < 0 ) max = new Long(c);
+				merge.put(entry.getKey(), c);
 			}
 		}
 		
+		// check if max and min are equal
+		logger.debug("min=" + min + ", max=" + max + ", minRange=" + MinRange + ", maxRange=" + MaxRange);
+		
 		// Normalize the counters
 		TreeMap<Long,Double> norm = new TreeMap<Long,Double>();
-		for(Entry<Long,Long> entry : merge.entrySet())
-			norm.put(entry.getKey(), entry.getValue()/sum.doubleValue());
+		for(Entry<Long,Long> entry : merge.entrySet()) {
+			Double val = MinRange + (MaxRange - 1)*(entry.getValue() - min)/(double)(max - min);
+			logger.debug("id="+entry.getKey()+", oval=" + entry.getValue() + ", nval=" + val);
+			norm.put(entry.getKey(),  val);
+			//norm.put(entry.getKey(), entry.getValue()/sum.doubleValue());
+		}
 		return norm;
 	}
 
