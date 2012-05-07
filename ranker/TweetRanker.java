@@ -5,9 +5,9 @@ import graph.PersistentGraph;
 import httpserv.RequestHandler;
 import httpserv.StatusHandler;
 
-import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,7 +29,7 @@ public class TweetRanker {
 	private static String name = "graph";
 	private static String path = "../data/graph/";
 	private static String RankingName = "../data/tweetrank.tr";
-	private static long RankingPeriod = MinToMilli(60);  
+	private static long RankingPeriod = MinToMilli(1);  
 	private static long StoringPeriod = MinToMilli(20);
 	
 	private HttpServer server;
@@ -81,12 +81,11 @@ public class TweetRanker {
 				HashMap<Long,Double> pr = ranker.compute();           // Start computation!
 				if ( pr != null ) { // If everything was OK, save the result on a file
 					logger.info("Saving TweetRank to temporal file...");
-					String tmpFile = "/tmp/" + generateTemporalFilename(); 
-					FileWriter fWriter = new FileWriter(tmpFile); 
-					BufferedWriter bWriter = new BufferedWriter(fWriter);
+					String tmpFile = RankingName + "_" + generateTemporalFilename();
+					PrintWriter pwriter = new PrintWriter(new FileWriter(tmpFile));
 					for(Map.Entry<Long, Double> entry : pr.entrySet())
-						bWriter.write(entry.getKey() + "\t" + entry.getValue() + "\n");
-					bWriter.close();
+						pwriter.println(entry.getKey() + "\t" + entry.getValue());
+					pwriter.close();
 					if ( !renameFile(tmpFile, RankingName) ) 
 						logger.error("Error moving the temporal file to the final location.");
 				}

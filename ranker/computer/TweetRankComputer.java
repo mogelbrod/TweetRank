@@ -20,13 +20,13 @@ public class TweetRankComputer {
 	//private static final double RANDOM_JUMP_CUM            = 1.00; // 10%
 	
 	private static final int NUM_WORK_THREADS = 10;
+	
+	
 	private int PATH_LENGTH = 100;
 	
-	private Random rseed = new Random();
 	private ReentrantLock cLock = new ReentrantLock(); // Avoids concurrent TweetRank computations
 	
-	ComputerThread[] workerThreads = new ComputerThread[NUM_WORK_THREADS];     
-	ArrayList<HashMap<Long,Long>> visitCounters = new ArrayList<HashMap<Long,Long>>();	
+	ComputerThread[] workerThreads = new ComputerThread[NUM_WORK_THREADS];	
 	
 	/** Read-only graph used to compute the TweetRank. */
 	private TemporaryGraph graph = null;
@@ -37,13 +37,6 @@ public class TweetRankComputer {
 	
 	private State state = State.IDLE;
 	private Date StartEndDate[] = new Date[2];
-
-
-	public TweetRankComputer() {
-		super();
-		for(int widx = 0; widx < NUM_WORK_THREADS; widx++)
-			visitCounters.add(new HashMap<Long,Long>());
-	}
 
 	/**
 	 * This exception is thrown when a TweetRank computation attemps to start when
@@ -63,14 +56,13 @@ public class TweetRankComputer {
 	
 	private class ComputerThread extends Thread {
 		private int tidx;
-		private HashMap<Long,Long> visitCounter;
-		private long total_visits;
+		private HashMap<Long,Long> counter = new HashMap<Long, Long> ();
+		private long totalCounter = 0L;
+		private Random rseed = new Random();
 
-		public ComputerThread(int tidx, HashMap<Long, Long> visitCounter) {
+		public ComputerThread(int tidx) {
 			super();
 			this.tidx = tidx;
-			this.visitCounter = visitCounter;
-			this.total_visits = 0L;
 		}
 		
 		/**
@@ -79,10 +71,50 @@ public class TweetRankComputer {
 		 * @param tweetID Visited tweet id.
 		 */
 		private void addVisit(Long tweetID) {
-			Long c = visitCounter.get(tweetID);
-			if ( c == null ) visitCounter.put(tweetID, 1L);
-			else visitCounter.put(tweetID, c+1);
-			total_visits += 1;
+			Long c = counter.get(tweetID);
+			if ( c == null ) counter.put(tweetID, 1L);
+			else counter.put(tweetID, c+1);
+			totalCounter += 1;
+		}
+		
+		/** 
+		 * Jumps to a random tweet from a random related user (mentioned/followed, just pass the appropiate list).
+		 * @param userList List of users to select a random user.
+		 * @return New tweet id. Returns null if the passed list is empty or the selected random user has no tweets.
+		 */
+		private Long jumpUserTweet(ArrayList<Long> usersList) {
+			// If there are no related users, then jump to a random tweet.
+			if (usersList == null || usersList.size() == 0) return null;
+
+			Long randomUser = usersList.get(rseed.nextInt(usersList.size()));
+			ArrayList<Long> tweetsOfUser = graph.getUserTweets(randomUser);
+
+			// If the related user does not have tweets, we jump to a random tweet.
+			if (tweetsOfUser == null || tweetsOfUser.size() == 0) return null;
+
+			return tweetsOfUser.get(rseed.nextInt(tweetsOfUser.size()));
+		}
+
+		/** 
+		 * Jumps to a random hashtag for the given tweet, and then to a random tweet for that hashtag. 
+		 * @param tweetHashtags List of hashtags included in a tweet.
+		 * @return New tweet id. Returns null if the tweet has no hashtags associated.
+		 */
+		private Long jumpHashtagTweet(ArrayList<String> tweetHashtags) {
+			if (tweetHashtags == null || tweetHashtags.size() == 0) return graph.getRandomTweet(rseed);
+
+			String randomHashtag = tweetHashtags.get(rseed.nextInt(tweetHashtags.size()));
+			ArrayList<Long> hashtag_tws = graph.getTweetsByHashtag(randomHashtag);
+			return hashtag_tws.get(rseed.nextInt(hashtag_tws.size()));
+		}
+
+		/** 
+		 * Jumps to a referenced (replied or retweeted) tweet.
+		 * @param tweetID Current tweetID.
+		 * @return New tweet id referenced by tweetID. Returns null if the tweet has no references.
+		 */
+		private Long jumpReferenceTweet(Long tweetID) {
+			return graph.getRefTweet(tweetID);
 		}		
 
 		@Override
@@ -123,51 +155,16 @@ public class TweetRankComputer {
 			}
 		}
 		
-		public long getTotalVisits() {
-			return total_visits;
+		public long getTotalCounter() {
+			return totalCounter;
+		}
+		
+		public HashMap<Long,Long> getCounter() {
+			return counter;
 		}
 	}
 
-	/** 
-	 * Jumps to a random tweet from a random related user (mentioned/followed, just pass the appropiate list).
-	 * @param userList List of users to select a random user.
-	 * @return New tweet id. Returns null if the passed list is empty or the selected random user has no tweets.
-	 */
-	private Long jumpUserTweet(ArrayList<Long> usersList) {
-		// If there are no related users, then jump to a random tweet.
-		if (usersList == null || usersList.size() == 0) return null;
 
-		Long randomUser = usersList.get(rseed.nextInt(usersList.size()));
-		ArrayList<Long> tweetsOfUser = graph.getUserTweets(randomUser);
-
-		// If the related user does not have tweets, we jump to a random tweet.
-		if (tweetsOfUser == null || tweetsOfUser.size() == 0) return null;
-
-		return tweetsOfUser.get(rseed.nextInt(tweetsOfUser.size()));
-	}
-
-	/** 
-	 * Jumps to a random hashtag for the given tweet, and then to a random tweet for that hashtag. 
-	 * @param tweetHashtags List of hashtags included in a tweet.
-	 * @return New tweet id. Returns null if the tweet has no hashtags associated.
-	 */
-	private Long jumpHashtagTweet(ArrayList<String> tweetHashtags) {
-		if (tweetHashtags == null || tweetHashtags.size() == 0) return graph.getRandomTweet(rseed);
-
-		String randomHashtag = tweetHashtags.get(rseed.nextInt(tweetHashtags.size()));
-		ArrayList<Long> hashtag_tws = graph.getTweetsByHashtag(randomHashtag);
-		return hashtag_tws.get(rseed.nextInt(hashtag_tws.size()));
-	}
-
-	/** 
-	 * Jumps to a referenced (replied or retweeted) tweet.
-	 * @param tweetID Current tweetID.
-	 * @return New tweet id referenced by tweetID. Returns null if the tweet has no references.
-	 */
-	private Long jumpReferenceTweet(Long tweetID) {
-		return graph.getRefTweet(tweetID);
-	}
-	
 	/**
 	 * Starts the computation of the TweetRank.
 	 * @return A HashMap where each entry is a pair (TweetID, TweetRank). If any problem
@@ -176,15 +173,18 @@ public class TweetRankComputer {
 	 * @throws NullTemporaryGraphException if the graph was not initialized.
 	 */
 	public HashMap<Long,Double> compute() throws ConcurrentComputationException, NullTemporaryGraphException {
+		HashMap<Long,Double> tweetrank = null;
+		
 		// Check if there is another thread already computing the tweetrank
 		if ( !cLock.tryLock() ) 
 			throw new ConcurrentComputationException();
 		
 		// Check if the graph is null
-		if ( graph == null )
+		if ( graph == null ) {
+			cLock.unlock();
 			throw new NullTemporaryGraphException();
+		}
 		
-		HashMap<Long,Double> tweetrank = null;
 		try {
 			// Determine the path length to be used
 			PATH_LENGTH = graph.getNumberOfTweets()/100;
@@ -210,8 +210,7 @@ public class TweetRankComputer {
 
 		// Start workers
 		for(int widx = 0; widx < NUM_WORK_THREADS; ++widx) {
-			visitCounters.get(widx).clear();
-			workerThreads[widx] = new ComputerThread(widx, visitCounters.get(widx));
+			workerThreads[widx] = new ComputerThread(widx);
 			workerThreads[widx].start();
 		}
 		
@@ -232,7 +231,14 @@ public class TweetRankComputer {
 		if (interrupted) return null;
 
 		// Merge & Normalize counters to get the TweetRank approximation
+		ArrayList<HashMap<Long,Long>> visitCounters = new ArrayList<HashMap<Long,Long>>();
+		for(int widx = 0; widx < NUM_WORK_THREADS; ++widx) 
+			visitCounters.add(workerThreads[widx].getCounter());
 		HashMap<Long,Double> tweetrank = MergeAndNormalizeCounters(visitCounters);
+		
+		// Force the destruction of worker threads.
+		for(int widx = 0; widx < NUM_WORK_THREADS; ++widx)
+			workerThreads[widx] = null;
 		
 		// Work finished!
 		StartEndDate[1] = new Date();
@@ -281,6 +287,12 @@ public class TweetRankComputer {
 		cLock.unlock();
 	}
 	
+	/**
+	 * Gets the number of tweets in the temporary graph whose
+	 * Rank is being computed.
+	 * WARNING: NOT THREAD-SAFE!
+	 * @return Number of tweets in the temporary graph.
+	 */
 	public long getNumberOfTweets() {
 		if (graph == null) return 0;
 		else return graph.getNumberOfTweets();
@@ -289,6 +301,7 @@ public class TweetRankComputer {
 	/**
 	 * Returns the state of the TweetRank computer. WORKING will be returned when the 
 	 * computation is active and IDLE when it is not.
+	 * WARNING: NOT THREAD-SAFE! 
 	 * @return State of the TweetRankComputer.
 	 */
 	public State getState() {
@@ -296,7 +309,8 @@ public class TweetRankComputer {
 	}
 	
 	/**
-	 * Returns the percentage of completion of the TweetRank computation. 
+	 * Returns the percentage of completion of the TweetRank computation.
+	 * WARNING: NOT THREAD-SAFE! 
 	 * @return If the computation is active, returns the percentage of completion of the TweetRank computation.
 	 * Otherwise returns 0.
 	 */
@@ -307,12 +321,17 @@ public class TweetRankComputer {
 		long CurrentVisits = 0L;
 		
 		for(int widx = 0; widx < NUM_WORK_THREADS; ++widx)
-			if ( workerThreads[widx] != null )
-				CurrentVisits += workerThreads[widx].getTotalVisits();
+			CurrentVisits += workerThreads[widx].getTotalCounter();
 		
 		return CurrentVisits/(double)ExpectedVisits;
 	}
 	
+	/**
+	 * Returns the expected remaining time for the completion of the ongoing
+	 * TweetRank computation (or zero, if state is IDLE).
+	 * WARNING: NOT THREAD-SAFE! 
+	 * @return Expected remaining time.
+	 */
 	public Time getRemainingTime() {
 		if ( state == State.IDLE ) return new Time(0);
 		
@@ -323,6 +342,13 @@ public class TweetRankComputer {
 		return new Time((long)(elapsed/completed) - elapsed);
 	}
 	
+	/**
+	 * Returns the elapsed time for the last started TweetRank computation.
+	 * WARNING: NOT THREAD-SAFE! 
+	 * @return If a computation is ongoing, returns the elapsed time since its beginning,
+	 * if the status is IDLE and a computation was completed, returns the elapsed time of
+	 * the previous computation, otherwise returns null.
+	 */
 	public Time getElapsedTime() {
 		if ( state == State.WORKING ) {
 			return new Time((new Date()).getTime() - StartEndDate[0].getTime());
@@ -333,6 +359,11 @@ public class TweetRankComputer {
 		}
 	}
 	
+	/**
+	 * Returns the end date of the last TweetRank computation.
+	 * WARNING: NOT THREAD-SAFE! 
+	 * @return Date of the last computation.
+	 */
 	public Date getEndDate() {
 		return StartEndDate[1];
 	}
