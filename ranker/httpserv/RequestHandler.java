@@ -26,12 +26,12 @@ public class RequestHandler implements HttpHandler {
 		// /FW (Follow relationship)  -> User 'ID' follows users in the list ['RefID']
 		// /TW (Tweets relationship)  -> User 'ID' is the author of tweets in the list ['RefID']
 
-		RT("Retweet"),
-		RP("Reply"),
-		MN("Mention"),
-		FW("Following"),
-		HT("Hashtag"),
-		TW("Tweets");
+		RETWEET("RT"),
+		REPLY("RP"),
+		MENTION("MN"),
+		FOLLOWING("FW"),
+		HASHTAG("HT"),
+		TWEETS("TW");
 
 		private String value;
 
@@ -39,8 +39,13 @@ public class RequestHandler implements HttpHandler {
 			this.value = value;
 		}
 
-		public String getValue() {
-			return value;
+		public static Type find(String search) {
+			for (Type t : Type.values()) {
+				if (t.value.equals(search)) {
+					return t;
+				}
+			}
+			throw new NullPointerException("No such type");
 		}
 	};
 
@@ -119,7 +124,10 @@ public class RequestHandler implements HttpHandler {
 
 		Type type = null;
 		try {
-			type = Type.valueOf(typeStr);
+			type = Type.find(typeStr);
+			if (type == null) {
+				throw new Exception();
+			}
 		} catch (Exception e) {
 			sendBadRequestResponse(t, "Invalid type '" + typeStr + "'.");
 			return;
@@ -149,7 +157,7 @@ public class RequestHandler implements HttpHandler {
 		}
 
 		ArrayList<Long> refLongIDs = new ArrayList<Long>(refIDs.size());
-		if (type != Type.HT) {
+		if (type != Type.HASHTAG) {
 			for (String refID : refIDs) {
 				try {
 					refLongIDs.add(Long.valueOf(refID));
@@ -160,23 +168,23 @@ public class RequestHandler implements HttpHandler {
 			}
 		}
 
-		if (type == Type.RT || type == Type.RP) {
+		if (type == Type.RETWEET || type == Type.REPLY) {
 			if (refLongIDs.size() != 1) {
 				sendBadRequestResponse(t, "For RT and RP only one refID is allowed. Size: " + refLongIDs.size());
 				return;
 			}
 			logger.debug(type + ": "+ id + " " + refLongIDs.get(0));
 			graph.addRefTweets(id, refLongIDs.get(0));
-		} else if (type == Type.FW) {
+		} else if (type == Type.FOLLOWING) {
 			logger.debug(type + ": "+ id + " " + refLongIDs);
 			graph.addFollows(id, refLongIDs);
-		} else if (type == Type.MN) {
+		} else if (type == Type.MENTION) {
 			logger.debug(type + ": "+ id + " " + refLongIDs);
 			graph.addMentioned(id, refLongIDs);
-		} else if (type == Type.TW) {
+		} else if (type == Type.TWEETS) {
 			logger.debug(type + ": "+ id + " " + refLongIDs);
 			graph.addUserTweets(id, refLongIDs);
-		} else if (type == Type.HT) {
+		} else if (type == Type.HASHTAG) {
 			logger.debug(type + ": "+ id + " " + refIDs);
 			graph.addHashtags(id, refIDs);
 		} else {
