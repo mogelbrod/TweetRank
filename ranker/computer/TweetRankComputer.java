@@ -125,31 +125,45 @@ public class TweetRankComputer {
 				for(int i = 1; i <= PATH_LENGTH; ++i) {
 					double random = rseed.nextDouble();
 					addVisit(currentID);
+					Long pID = currentID;
 
 					if ( random <= VISIT_REFERENCED_TWEET_CUM ) {
 						currentID = jumpReferenceTweet(currentID);
-						if (currentID != null) continue;
+						if (currentID != null) {
+							logger.debug("COMPU: REF " + pID + "->" + currentID);
+							continue;
+						}
 						else random = VISIT_REFERENCED_TWEET_CUM + rseed.nextDouble()*(1-VISIT_REFERENCED_TWEET_CUM);
 					}
 
-					if ( random <= VISIT_MENTIONED_USER_CUM ) {
+					if ( random <= VISIT_MENTIONED_USER_CUM ) {					
 						currentID = jumpUserTweet(graph.getMentionedUsers(currentID));
-						if (currentID != null) continue;
+						if (currentID != null) {
+							logger.debug("COMPU: MN " + pID + "->" + currentID);
+							continue;
+						}
 						else random = VISIT_MENTIONED_USER_CUM + rseed.nextDouble()*(1-VISIT_MENTIONED_USER_CUM);
 					}
 
-					if ( random <= VISIT_FOLLOWED_USER_CUM ) {
+					if ( random <= VISIT_FOLLOWED_USER_CUM ) {						
 						currentID = jumpUserTweet(graph.getFollowingUsers(graph.getTweetOwner(currentID)));
-						if (currentID != null) continue;
+						if (currentID != null) {
+							logger.debug("COMPU: FW " + pID + "->" + currentID);
+							continue;
+						}
 						else random = VISIT_FOLLOWED_USER_CUM + rseed.nextDouble()*(1-VISIT_FOLLOWED_USER_CUM);
 					}
 					
 					if ( random <= VISIT_USED_HASHTAG_CUM ) {
 						currentID = jumpHashtagTweet(graph.getHashtagsByTweet(currentID));
-						if (currentID != null) continue;
+						if (currentID != null) {
+							logger.debug("COMPU: HT " + pID + "->" + currentID);
+							continue;
+						}
 						else random = VISIT_USED_HASHTAG_CUM + rseed.nextDouble()*(1-VISIT_USED_HASHTAG_CUM);
 					}
 					
+					logger.debug("COMPU: RND " + pID + "->" + currentID);					
 					currentID = graph.getRandomTweet(rseed);
 				}
 			}
@@ -187,8 +201,8 @@ public class TweetRankComputer {
 		
 		try {
 			// Determine the path length to be used
-			PATH_LENGTH = graph.getNumberOfTweets()/100;
-			if (PATH_LENGTH < 100) PATH_LENGTH = 100;
+			PATH_LENGTH = graph.getNumberOfTweets();
+			if (PATH_LENGTH < 1000) PATH_LENGTH = 1000;
 			
 			// Start computation!
 			tweetrank = MCCompletePath();
@@ -234,7 +248,7 @@ public class TweetRankComputer {
 		ArrayList<HashMap<Long,Long>> visitCounters = new ArrayList<HashMap<Long,Long>>();
 		for(int widx = 0; widx < NUM_WORK_THREADS; ++widx) 
 			visitCounters.add(workerThreads[widx].getCounter());
-		TreeMap<Long,Double> tweetrank = MergeAndNormalizeCounters(visitCounters);
+		TreeMap<Long,Double> tweetrank = MergeAndNormalizeCounters(visitCounters, 0L, 10L);
 		
 		// Force the destruction of worker threads.
 		for(int widx = 0; widx < NUM_WORK_THREADS; ++widx)
@@ -256,23 +270,36 @@ public class TweetRankComputer {
 	 * @param visitCounters Collection of counters to merge and normalize.
 	 * @return Returns a merged and normalized HashMap, so that the sum of all values is 1.0.
 	 */
-	private static TreeMap<Long,Double> MergeAndNormalizeCounters(Collection<HashMap<Long,Long>> visitCounters) {
+	private static TreeMap<Long,Double> MergeAndNormalizeCounters(Collection<HashMap<Long,Long>> visitCounters,
+			Long MinRange, Long MaxRange) {
 		// Merge all the counters
 		TreeMap<Long,Long> merge = new TreeMap<Long,Long>();
 		Long sum = 0L;
+		Long min = null;
+		Long max = null;
 		for(HashMap<Long,Long> counter : visitCounters) {
 			for(Entry<Long,Long> entry : counter.entrySet()) {
 				Long c = merge.get(entry.getKey());
-				if ( c == null ) merge.put(entry.getKey(), entry.getValue());
-				else merge.put(entry.getKey(), c + entry.getValue());
+				if ( c == null )  c = entry.getValue();
+				else c = c + entry.getValue();
 				sum += entry.getValue();
+				if ( min == null || min.compareTo(c) > 0 ) min = new Long(c);
+				if ( max == null || max.compareTo(c) < 0 ) max = new Long(c);
+				merge.put(entry.getKey(), c);
 			}
 		}
 		
+		// check if max and min are equal
+		logger.debug("min=" + min + ", max=" + max + ", minRange=" + MinRange + ", maxRange=" + MaxRange);
+		
 		// Normalize the counters
 		TreeMap<Long,Double> norm = new TreeMap<Long,Double>();
-		for(Entry<Long,Long> entry : merge.entrySet())
-			norm.put(entry.getKey(), entry.getValue()/sum.doubleValue());
+		for(Entry<Long,Long> entry : merge.entrySet()) {
+			Double val = MinRange + (MaxRange - MinRange)*(entry.getValue() - min)/(double)(max - min);
+			logger.debug("id="+entry.getKey()+", oval=" + entry.getValue() + ", nval=" + val);
+			norm.put(entry.getKey(),  val);
+			//norm.put(entry.getKey(), entry.getValue()/sum.doubleValue());
+		}
 		return norm;
 	}
 
