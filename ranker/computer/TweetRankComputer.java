@@ -172,8 +172,8 @@ public class TweetRankComputer {
 	 * @throws ConcurrentComputationException is thrown if there is a concurrent computation.
 	 * @throws NullTemporaryGraphException if the graph was not initialized.
 	 */
-	public HashMap<Long,Double> compute() throws ConcurrentComputationException, NullTemporaryGraphException {
-		HashMap<Long,Double> tweetrank = null;
+	public TreeMap<Long,Double> compute() throws ConcurrentComputationException, NullTemporaryGraphException {
+		TreeMap<Long,Double> tweetrank = null;
 		
 		// Check if there is another thread already computing the tweetrank
 		if ( !cLock.tryLock() ) 
@@ -205,7 +205,7 @@ public class TweetRankComputer {
 	 * @return A HashMap where each entry is a pair (TweetID, TweetRank). If any problem
 	 * ocurred, the result is null.
 	 */
-	private HashMap<Long,Double> MCCompletePath() {	
+	private TreeMap<Long,Double> MCCompletePath() {	
 		logger.info("Ranking started at " + Time.formatDate("yyyy/MM/dd HH:mm:ss", new Date()));
 
 		// Start workers
@@ -234,7 +234,7 @@ public class TweetRankComputer {
 		ArrayList<HashMap<Long,Long>> visitCounters = new ArrayList<HashMap<Long,Long>>();
 		for(int widx = 0; widx < NUM_WORK_THREADS; ++widx) 
 			visitCounters.add(workerThreads[widx].getCounter());
-		HashMap<Long,Double> tweetrank = MergeAndNormalizeCounters(visitCounters);
+		TreeMap<Long,Double> tweetrank = MergeAndNormalizeCounters(visitCounters);
 		
 		// Force the destruction of worker threads.
 		for(int widx = 0; widx < NUM_WORK_THREADS; ++widx)
@@ -256,9 +256,9 @@ public class TweetRankComputer {
 	 * @param visitCounters Collection of counters to merge and normalize.
 	 * @return Returns a merged and normalized HashMap, so that the sum of all values is 1.0.
 	 */
-	private static HashMap<Long,Double> MergeAndNormalizeCounters(Collection<HashMap<Long,Long>> visitCounters) {
+	private static TreeMap<Long,Double> MergeAndNormalizeCounters(Collection<HashMap<Long,Long>> visitCounters) {
 		// Merge all the counters
-		HashMap<Long,Long> merge = new HashMap<Long,Long>();
+		TreeMap<Long,Long> merge = new TreeMap<Long,Long>();
 		Long sum = 0L;
 		for(HashMap<Long,Long> counter : visitCounters) {
 			for(Entry<Long,Long> entry : counter.entrySet()) {
@@ -270,7 +270,7 @@ public class TweetRankComputer {
 		}
 		
 		// Normalize the counters
-		HashMap<Long,Double> norm = new HashMap<Long,Double>(merge.size());
+		TreeMap<Long,Double> norm = new TreeMap<Long,Double>();
 		for(Entry<Long,Long> entry : merge.entrySet())
 			norm.put(entry.getKey(), entry.getValue()/sum.doubleValue());
 		return norm;
