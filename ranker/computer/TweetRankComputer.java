@@ -125,31 +125,45 @@ public class TweetRankComputer {
 				for(int i = 1; i <= PATH_LENGTH; ++i) {
 					double random = rseed.nextDouble();
 					addVisit(currentID);
+					Long pID = currentID;
 
 					if ( random <= VISIT_REFERENCED_TWEET_CUM ) {
 						currentID = jumpReferenceTweet(currentID);
-						if (currentID != null) continue;
+						if (currentID != null) {
+							logger.debug("COMPU: REF " + pID + "->" + currentID);
+							continue;
+						}
 						else random = VISIT_REFERENCED_TWEET_CUM + rseed.nextDouble()*(1-VISIT_REFERENCED_TWEET_CUM);
 					}
 
-					if ( random <= VISIT_MENTIONED_USER_CUM ) {
+					if ( random <= VISIT_MENTIONED_USER_CUM ) {					
 						currentID = jumpUserTweet(graph.getMentionedUsers(currentID));
-						if (currentID != null) continue;
+						if (currentID != null) {
+							logger.debug("COMPU: MN " + pID + "->" + currentID);
+							continue;
+						}
 						else random = VISIT_MENTIONED_USER_CUM + rseed.nextDouble()*(1-VISIT_MENTIONED_USER_CUM);
 					}
 
-					if ( random <= VISIT_FOLLOWED_USER_CUM ) {
+					if ( random <= VISIT_FOLLOWED_USER_CUM ) {						
 						currentID = jumpUserTweet(graph.getFollowingUsers(graph.getTweetOwner(currentID)));
-						if (currentID != null) continue;
+						if (currentID != null) {
+							logger.debug("COMPU: FW " + pID + "->" + currentID);
+							continue;
+						}
 						else random = VISIT_FOLLOWED_USER_CUM + rseed.nextDouble()*(1-VISIT_FOLLOWED_USER_CUM);
 					}
 					
 					if ( random <= VISIT_USED_HASHTAG_CUM ) {
 						currentID = jumpHashtagTweet(graph.getHashtagsByTweet(currentID));
-						if (currentID != null) continue;
+						if (currentID != null) {
+							logger.debug("COMPU: HT " + pID + "->" + currentID);
+							continue;
+						}
 						else random = VISIT_USED_HASHTAG_CUM + rseed.nextDouble()*(1-VISIT_USED_HASHTAG_CUM);
 					}
 					
+					logger.debug("COMPU: RND " + pID + "->" + currentID);					
 					currentID = graph.getRandomTweet(rseed);
 				}
 			}
@@ -187,8 +201,8 @@ public class TweetRankComputer {
 		
 		try {
 			// Determine the path length to be used
-			PATH_LENGTH = graph.getNumberOfTweets()/100;
-			if (PATH_LENGTH < 100) PATH_LENGTH = 100;
+			PATH_LENGTH = graph.getNumberOfTweets();
+			if (PATH_LENGTH < 1000) PATH_LENGTH = 1000;
 			
 			// Start computation!
 			tweetrank = MCCompletePath();
