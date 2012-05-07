@@ -6,7 +6,7 @@ import org.apache.log4j.Logger;
 
 public class TemporaryGraph {
 	private static final Logger logger = Logger.getLogger("ranker.logger");
-	
+
 	/** Contains all tweets */
 	private Hashtable<Long,Long> tweetSet;
 	private ArrayList<Long> tweetList;
@@ -35,6 +35,27 @@ public class TemporaryGraph {
 		return out;
 	}
 
+	private static Hashtable<Long,ArrayList<Long>> convertFilteredFriends(Hashtable<Long, HashSet<Long>> friends, 
+			Hashtable<Long,ArrayList<Long>> userTweets) {
+		Hashtable<Long, ArrayList<Long>> filtered_friends = new Hashtable<Long, ArrayList<Long>>(); 
+		for ( Map.Entry<Long, HashSet<Long>> entry : friends.entrySet() ) {
+			Long user = entry.getKey(); // Current user
+			ArrayList<Long> f_userfriends = new ArrayList<Long>(); // Filtered list of user's friends
+			
+			// Traverses all the user's friends
+			for( Long friend : entry.getValue() ) { 
+				// If the friend has posted some tweet, then add the friend to the filtered list of friends
+				ArrayList<Long> tweetsByFriend = userTweets.get(friend);
+				if ( tweetsByFriend != null && tweetsByFriend.size() > 0 )
+					f_userfriends.add(friend);
+			}
+			
+			filtered_friends.put(user, f_userfriends);
+		}
+
+		return filtered_friends;
+	}
+
 
 	/** Constructor.  */
 	public TemporaryGraph(PersistentGraph sgraph) {
@@ -45,9 +66,9 @@ public class TemporaryGraph {
 			refTweets = new Hashtable<Long,Long>(sgraph.getRefTweets());
 			userTweets = convertHashtable(sgraph.getUserTweets());
 			mentioned = convertHashtable(sgraph.getMentioned());
-			follows = convertHashtable(sgraph.getFollows());
 			hashtagsByTweet = convertHashtable(sgraph.getHashtagsByTweet());
 			tweetsByHashtag = convertHashtable(sgraph.getTweetsByHashtag());
+			follows = convertFilteredFriends(sgraph.getFollows(), userTweets);
 		} catch (Throwable t) {
 			logger.error("Error creating a new temporary graph.", t);			
 		} finally {
@@ -98,7 +119,7 @@ public class TemporaryGraph {
 	public Set<Long> getTweetSet() {
 		return tweetSet.keySet();
 	}
-	
+
 	public List<Long> getTweetList() {
 		return tweetList;
 	}	
