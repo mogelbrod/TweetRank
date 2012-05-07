@@ -44,19 +44,13 @@ public class StatusHandler implements HttpHandler {
 			Date enddate = trcomputer.getEndDate();
 			Time elapsed = trcomputer.getElapsedTime();
 
-			if ( state == TweetRankComputer.State.WORKING ) {
-				response += "State: WORKING\n";
-				response += "Number of tweets: " + NTweets + "\n";
-				response += "Last computation: " + (enddate == null ? "Never" : Time.formatDate("yyyy/MM/dd HH:mm:ss", enddate)) + "\n";
-				response += "Elapsed time: " + elapsed + "\n";
-				response += "Completed: " + trcomputer.getPercentageOfCompletion()*100.0 + "%\n";
-				response +=	"Expected remaining time: " + trcomputer.getRemainingTime(); 
-			} else {
-				response += "State: IDLE\n";
-				response += "Number of tweets: " + NTweets + "\n";
-				response += "Last computation: " + (enddate == null ? "Never" : Time.formatDate("yyyy/MM/dd HH:mm:ss", enddate)) + "\n";
-				if ( elapsed != null )	response += "Elapsed time: " + elapsed;
-			}
+			if ( state == TweetRankComputer.State.WORKING )	response += "State: WORKING\n"; 
+			else response += "State: IDLE\n";
+
+			response += "Number of tweets: " + NTweets + "\n";
+			response += "Last computation: " + (enddate == null ? "Never" : Time.formatDate("yyyy/MM/dd HH:mm:ss", enddate)) + "\n";
+			if ( elapsed != null )	response += "Elapsed time: " + elapsed;
+
 
 			t.sendResponseHeaders(200, response.length());
 			OutputStream os = t.getResponseBody();

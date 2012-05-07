@@ -43,18 +43,6 @@ public class TweetRanker {
 	/** Converts minutes to milliseconds. */
 	private static long MinToMilli(long min) { return min*60000; }
 
-	/** Rename a file. */
-	/*private static boolean renameFile(String file, String toFile) {
-		java.io.File toBeRenamed = new java.io.File(file);
-		if (!toBeRenamed.exists() || toBeRenamed.isDirectory()) return false;
-		java.io.File newFile = new java.io.File(toFile);
-		return toBeRenamed.renameTo(newFile);
-	}
-
-	private static String generateTemporalFilename() {
-		return java.util.UUID.randomUUID().toString();
-	}*/
-
 	/** Shutdown hook. Saves the persistent information on disk. */
 	private static class ShutdownThread implements Runnable {
 		TweetRanker server;
@@ -97,8 +85,6 @@ public class TweetRanker {
 					for(Map.Entry<Long, Double> entry : pr.entrySet())
 						pwriter.println(entry.getKey() + "=" + entry.getValue());
 					pwriter.close();
-					/*if ( !renameFile(tmpFile, RankingName) ) 
-						logger.error("Error moving the temporal file to the final location.");*/
 					notifySolr();
 				}
 			} catch (TweetRankComputer.ConcurrentComputationException e) {
