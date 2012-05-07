@@ -1,17 +1,24 @@
 \documentclass[12pt,a4paper]{article}
-\usepackage[utf8x]{inputenc}
-\usepackage{ucs}
+\usepackage[utf8]{inputenc}
+%\usepackage{ucs}
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{amssymb}
+\usepackage{parskip}
 \author{V. Hallberg, A. Hjalmarsson, J. Puigcerver, \\C. Rydberg and J. Stjernberg\\
 \footnotesize{\{victorha,alehja,joanpip,chrryd,stjer\}@kth.se}}
 \title{TweetRank: An adaptation of PageRank algorithm to Twitter world}
 
-
 \begin{document}
 \maketitle
-\abstract{PageRank is an algorithm presented by Larry Page and Sergey Brin that allows to estimate the importance of a web page using the hyperlinks between them. This algorithm was originally the core of Google's search engine and proved to work very well in the web structure. Our task is to adapt the PageRank to work in the context of Twitter, not the whole web. This document presents the mathematical basis to compute, what we called, the \emph{TweetRank}.}
+\begin{abstract}
+\noindent
+PageRank is an algorithm presented by Larry Page and Sergey Brin that allows to estimate the importance of a web page using the hyperlinks between them. This algorithm was originally the core of Google's search engine and proved to work very well in the web structure. Our task is to adapt the PageRank to work in the context of Twitter, not the whole web. This document presents the mathematical basis to compute, what we called, the \emph{TweetRank}.
+\end{abstract}
+%\\ \\ \\
+\tableofcontents
+
+\newpage
 
 \section{Introduction}
 Page and Brin defined the importance of a web page as the probability that a person that randomly clicks on links will arrive at that web page. So, PageRank is a probability distribution that represents the likelihood that a person visits some web page by random clicks. This assumption works really well on the World Wide Web since the navigation is driven by hyperlinks among web pages. \\ 
