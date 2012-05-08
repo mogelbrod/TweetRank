@@ -80,7 +80,7 @@ class RankerNotifier:
         return self._sendRequest(request)
 
 
-    def notify_tweet(tweet):
+    def notify_tweet(self, tweet):
         if tweet is None: return
 
         if tweet.get_retweeted_status() is not None:
@@ -98,6 +98,6 @@ class RankerNotifier:
         self.add_user_tweets(tweet.get_user_id(), [tweet.get_tweet_id()])
 
 
-    def notify_tweets(tweets):
+    def notify_tweets(self, tweets):
         for tweet in tweets:
             self.notify_tweet(tweet)
