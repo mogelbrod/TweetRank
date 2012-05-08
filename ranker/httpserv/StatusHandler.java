@@ -34,20 +34,31 @@ public class StatusHandler implements HttpHandler {
 			"Number of users: " + pgraph.getNumberOfUsers() + "\n" +
 			"Number of hashtags: " + pgraph.getNumberOfHashtags() + "\n" +
 			"Average tweets per user: " + pgraph.getAverageTweetsPerUser() + "\n" +
-			"Average friends per user: " + pgraph.getAverageFriendsPerUser() + "\n" +
+			"Average effective friends per user: " + pgraph.getAverageEffectiveFriendsPerUser() + "\n" +
 			"Average references per tweet: " + pgraph.getAverageReferencePerTweet() + "\n" +
-			"Average mentions per tweet: " + pgraph.getAverageMentionsPerTweet() + "\n\n";
+			"Average mentions per tweet: " + pgraph.getAverageMentionsPerTweet() + "\n" +
+			"Average hashtags per tweet: " + pgraph.getAverageHashtagsPerTweet() + "\n\n";
 
 			response += "TweetRank computation:\n======================\n";
 			TweetRankComputer.State state = trcomputer.getState();
-			long NTweets = trcomputer.getNumberOfTweets();
 			Date enddate = trcomputer.getEndDate();
 			Time elapsed = trcomputer.getElapsedTime();
 
 			if ( state == TweetRankComputer.State.WORKING )	response += "State: WORKING\n"; 
 			else response += "State: IDLE\n";
 
-			response += "Number of tweets: " + NTweets + "\n";
+			if ( trcomputer.getTemporaryGraph() != null ) {
+				response += "Number of tweets: " + trcomputer.getTemporaryGraph().getNumberOfTweets() + "\n" + 
+				"Number of users: " + trcomputer.getTemporaryGraph().getNumberOfUsers() + "\n" +
+				"Number of hashtags: " + trcomputer.getTemporaryGraph().getNumberOfHashtags() + "\n" +
+				"Average tweets per user: " + trcomputer.getTemporaryGraph().getAverageTweetsPerUser() + "\n" +
+				"Average effective friends per user: " + trcomputer.getTemporaryGraph().getAverageEffectiveFriendsPerUser() + "\n" +
+				"Average references per tweet: " + trcomputer.getTemporaryGraph().getAverageReferencePerTweet() + "\n" +
+				"Average mentions per tweet: " + trcomputer.getTemporaryGraph().getAverageMentionsPerTweet() + "\n" +
+				"Average hashtags per tweet: " + trcomputer.getTemporaryGraph().getAverageHashtagsPerTweet() + "\n\n";
+			} else {
+				response += "Temporary graph not initialized.\n\n";
+			}
 			response += "Last computation: " + (enddate == null ? "Never" : Time.formatDate("yyyy/MM/dd HH:mm:ss", enddate)) + "\n";
 			if ( elapsed != null )	response += "Elapsed time: " + elapsed;
 

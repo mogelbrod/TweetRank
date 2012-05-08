@@ -319,14 +319,12 @@ public class TweetRankComputer {
 	}
 
 	/**
-	 * Gets the number of tweets in the temporary graph whose
-	 * Rank is being computed.
-	 * WARNING: NOT THREAD-SAFE!
+	 * Returns the current temporary graph being used. The graph should
+	 * not be manipulated with write operations.
 	 * @return Number of tweets in the temporary graph.
 	 */
-	public long getNumberOfTweets() {
-		if (graph == null) return 0;
-		else return graph.getNumberOfTweets();
+	public TemporaryGraph getTemporaryGraph() {
+		return graph;
 	}	
 
 	/**

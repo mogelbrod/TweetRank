@@ -146,13 +146,19 @@ public class TemporaryGraph {
 		return refTweets.size()/(double)tweetSet.size();
 	}	
 
-	public double getAverageFriendsPerUser() {
+	/**
+	 * The Effective Friends are those friends who have posted
+	 * some tweet. This method returns the mean of the
+	 * effective friends that users have.
+	 * @return The average number of effective friends per user. 
+	 */
+	public double getAverageEffectiveFriendsPerUser() {
 		if (follows.size() == 0) return 0.0;
 
 		int Tfollowed = 0;
 		for( ArrayList<Long> l : follows.values() )
 			Tfollowed += l.size();
-		return Tfollowed/follows.size();
+		return Tfollowed/(double)follows.size();
 	}
 
 	public double getAverageMentionsPerTweet() {
@@ -162,5 +168,14 @@ public class TemporaryGraph {
 		for( ArrayList<Long> l : mentioned.values() )
 			Tmentions += l.size();
 		return Tmentions/(double)tweetSet.size();
+	}
+	
+	public double getAverageHashtagsPerTweet() {
+		if ( tweetSet.size() == 0 ) return 0.0;
+		
+		int Thashtags = 0;
+		for( ArrayList<String> l : hashtagsByTweet.values() )
+			Thashtags += l.size();
+		return Thashtags/(double)tweetSet.size();
 	}
 }

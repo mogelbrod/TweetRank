@@ -8,7 +8,7 @@ import org.apache.log4j.Logger;
 
 public class PersistentGraph {
 	private static final Logger logger = Logger.getLogger("ranker.logger");
-	
+
 	private final ReentrantLock tweetsLock = new ReentrantLock(true);
 	private final ReentrantLock userTweetsLock = new ReentrantLock(true);
 	private final ReentrantLock mentionedLock = new ReentrantLock(true);
@@ -244,30 +244,69 @@ public class PersistentGraph {
 		return refTweets.size()/(double)tweetSet.size();
 	}	
 
-	public double getAverageFriendsPerUser() {
-		if (follows.size() == 0) return 0.0;
-
-		int Tfollowed = 0;
-		for( HashSet<Long> l : follows.values() )
-			Tfollowed += l.size();
-		return Tfollowed/follows.size();
+	/**
+	 * The Effective Friends are those friends who have posted
+	 * some tweet. This method returns the mean of the
+	 * effective friends that users have.
+	 * @return The average number of effective friends per user. 
+	 */
+	public double getAverageEffectiveFriendsPerUser() {
+		double avg_fpu = 0.0;
+		followsLock.lock();
+		userTweetsLock.lock();
+		try {
+			if (follows.size() > 0)  {
+				int Tfriends = 0;
+				for( HashSet<Long> friendsSet : follows.values() ) {
+					for ( Long friend : friendsSet ) {
+						HashSet<Long> tweets_by_friend = userTweets.get(friend);
+						if (tweets_by_friend != null && tweets_by_friend.size() > 0) 
+							Tfriends++;
+					}
+				}
+				avg_fpu = Tfriends/(double)follows.size();
+			}
+		} finally {
+			userTweetsLock.unlock();
+			followsLock.unlock();
+		}
+		return avg_fpu;
 	}
 
 	public double getAverageMentionsPerTweet() {
-		if( tweetSet.size() == 0 ) return 0.0;
-
-		int Tmentions = 0;
-		for( HashSet<Long> l : mentioned.values() )
-			Tmentions += l.size();
-		return Tmentions/(double)tweetSet.size();
+		double avg_mpt = 0.0;
+		mentionedLock.lock();
+		tweetsLock.lock();
+		try {
+			if ( tweetSet.size() > 0 ) {
+				int Tmentions = 0;
+				for( HashSet<Long> l : mentioned.values() )
+					Tmentions += l.size();
+				avg_mpt = Tmentions/(double)tweetSet.size();
+			}
+		} finally {
+			tweetsLock.unlock();
+			mentionedLock.unlock();
+		}
+		return avg_mpt;
 	}
 
-	public String getPath() {
-		return path;
-	}
-
-	public String getName() {
-		return name;
+	public double getAverageHashtagsPerTweet() {
+		double avg_hpt = 0.0;
+		hashtagsLock.lock();
+		tweetsLock.lock();
+		try {
+			if ( tweetSet.size() > 0 ) {
+				int Thashtags = 0;
+				for( HashSet<String> l : hashtagsByTweet.values() )
+					Thashtags += l.size();
+				avg_hpt = Thashtags/(double)tweetSet.size();
+			}
+		} finally {
+			tweetsLock.unlock();
+			hashtagsLock.unlock();
+		}
+		return avg_hpt;
 	}
 
 	/**

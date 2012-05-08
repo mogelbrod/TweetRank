@@ -70,7 +70,7 @@ public class TweetRanker {
 				URL url = new URL("http://176.9.149.66:8983/solr/reloadCache");
 				url.getContent();
 			} catch (Exception e) {
-				logger.error("Error while notifying solr about the new TweetRank", e);
+				logger.error("Error trying to notify solr about the new TweetRank", e);
 			}
 		}
 		
