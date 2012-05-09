@@ -44,7 +44,7 @@ class Worker(Thread):
                 self.rnotif.add_user_friends(user_id, friends)
                 f.close()
             else:
-                pass # Afegir hashtags de l'usuari
+                pass # Add hashtags used by the user
 
         for ifn in range(self.nid, len(self.ltdir), self.nthrs):
             fname = self.tdir + self.ltdir[ifn]
@@ -76,7 +76,7 @@ def main(argv):
     fulist.sort()
     ftlist.sort()
 
-    nworkers = 4
+    nworkers = 16
     workers = [ Worker(tid, nworkers, fulist, ftlist, users_dir, tweets_dir) for tid in range(nworkers) ]
     for w in workers: w.start()
     for w in workers: w.join()

@@ -5,7 +5,7 @@ from Tweet import Tweet
 import solr, time
 
 class SolrNotifier:
-    def __init__(self, host = '176.9.149.66', port = 8983, max_pending=1000):
+    def __init__(self, host = '176.9.149.66', port = 8983, max_pending=500):
         self.host = host
         self.port = port
         self.max_pending = max_pending
@@ -44,8 +44,11 @@ class SolrNotifier:
                 if ex.httpcode == 503:
                     trycommit = True
                     time.sleep(2)
-                else: trycommit = False
-            except:
+                else:
+                    print ex
+                    trycommit = False
+            except Exception as ex:
+                print ex
                 trycommit = False
 
         conn.close()
