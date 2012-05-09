@@ -3,7 +3,6 @@
 
 from ServicesNotifier import ServicesNotifier
 from TweetArrayParser import TweetArrayParser
-from EscapeXMLIllegalCharEntities import EscapeXMLIllegalCharEntities
 
 from xml.sax import make_parser
 from os import listdir
@@ -71,9 +70,6 @@ def main(argv):
         logger.info('Tweets file: %s' % fname)
         parser = make_parser()
         parser.setContentHandler(TweetArrayParser(lambda tw: notif.notify_tweet(tw)))
-        f = open(fname)
-        fdata = EscapeXMLIllegalCharEntities(f.read())
-        f.close()
         parser.parse(fdata)
 
     return 0

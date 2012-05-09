@@ -5,6 +5,7 @@ from xml.sax.handler import ContentHandler
 import rfc822, datetime, pytz
 from Tweet import Tweet
 from User import User
+from EscapeXMLIllegalCharEntities import EscapeXMLIllegalCharEntities
 
 class TweetArrayParser(ContentHandler):
     class Hashtag:
@@ -45,7 +46,7 @@ class TweetArrayParser(ContentHandler):
         if name == 'id':
             self.stack[-1].id = int(self.pcharacters)
         elif name == 'text':
-            self.stack[-1].text = self.pcharacters
+            self.stack[-1].text = EscapeXMLIllegalCharEntities(self.pcharacters)
         elif name == 'in_reply_to_status_id':
             if len(self.pcharacters) > 0: self.stack[-1].replied_id = int(self.pcharacters)
         elif name == 'retweet_count':
@@ -56,9 +57,9 @@ class TweetArrayParser(ContentHandler):
                                     date[3], date[4], date[5], 0, pytz.utc)
             self.stack[-1].date = date
         elif name == 'name':
-            self.stack[-1].nick = self.pcharacters
+            self.stack[-1].nick = EscapeXMLIllegalCharEntities(self.pcharacters)
         elif name == 'screen_name':
-            self.stack[-1].name = self.pcharacters
+            self.stack[-1].name = EscapeXMLIllegalCharEntities(self.pcharacters)
         elif name == 'followers_count':
             self.stack[-1].followers_count = int(self.pcharacters)
         elif name == 'friends_count':
@@ -75,12 +76,12 @@ class TweetArrayParser(ContentHandler):
             self.tweet_callback(self.stack[-1])
             self.stack.pop() # Removes tweet from the object stack
         elif name == 'hashtag':
-            self.stack[-2].hashtags.append(self.stack[-1].text)
+            self.stack[-2].hashtags.append(EscapeXMLIllegalCharEntities(self.stack[-1].text))
             self.stack.pop()
         elif name == 'user_mention':
             self.stack[-2].mentions.append(self.stack[-1].id)
             self.stack.pop()
 
     def characters(self, content):
-        self.pcharacters += content
+        self.pcharacters += content.encode('utf-8')
 
