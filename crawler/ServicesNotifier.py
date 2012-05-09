@@ -30,6 +30,6 @@ class ServicesNotifier:
         self.rnotif.add_user_hashtags(user_id, hashtags)
 
     def flush(self):
-        #self.snotif.notify_tweets(self.pending)
+        self.snotif.notify_tweets(self.pending)
         self.rnotif.notify_tweets(self.pending)
         self.pending = []
