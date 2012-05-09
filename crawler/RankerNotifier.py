@@ -2,22 +2,23 @@
 # -*- coding: utf-8 -*-
 
 from tornado.httpclient import AsyncHTTPClient, HTTPClient, HTTPError, HTTPRequest
+from tornado.ioloop import IOLoop
 
 class RankerNotifier:
     def __init__(self, host = "176.9.149.66", port = 4711):
-        self.http_client = HTTPClient()
+        AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
+        self.http_client = AsyncHTTPClient()
         self.host = host
         self.port = port
 
+    def _handleResponse(self, response):
+        if response.error is not None: print (response.request.body, response.error)
+        #else: print (response.request.body, 'OK')
+        IOLoop.instance().stop()
+
     def _sendRequest(self, request):
-        try:
-            response = self.http_client.fetch(request)
-            response.rethrow()
-            return response.code
-        except HTTPError as e:
-            return e.code
-        except:
-            return 999
+        self.http_client.fetch(request, self._handleResponse)
+        IOLoop.instance().start()
 
     def add_retweet(self, tweet_id, retweeted_id):
         """This method tells the ranker that `tweet_id' is a retweet of `retweeted_id'"""
@@ -43,13 +44,13 @@ class RankerNotifier:
         request = HTTPRequest('http://%s:%d/'%(self.host, self.port),method='POST',body=body)
         return self._sendRequest(request)
 
-    def add_user_friends(self, user_id, followed_user_ids):
+    def add_user_friends(self, user_id, friend_ids):
         """This method tells the ranker that `user_id' is following users in `followed_user_ids'"""
-        if len(followed_user_ids) == 0:
+        if friend_ids is None or len(friend_ids) == 0:
             return 200
 
         body = 'TYPE=FW&ID=%d' % user_id
-        for uid in followed_user_ids:
+        for uid in friend_ids:
             body = body + ('&RefID=%d' % uid)
         body = body + '\n'
         request = HTTPRequest('http://%s:%d/'%(self.host, self.port),method='POST',body=body)
@@ -57,7 +58,7 @@ class RankerNotifier:
 
     def add_user_tweets(self, user_id, tweet_ids):
         """This method tells the ranker that `user_id' is the author of tweets in `tweet_ids'"""
-        if len(tweet_ids) == 0:
+        if tweet_ids is None or len(tweet_ids) == 0:
             return 200
 
         body = 'TYPE=TW&ID=%d' % user_id
@@ -69,7 +70,7 @@ class RankerNotifier:
 
     def add_tweet_hashtags(self, tweet_id, hashtags):
         """This method tells the ranker that `tweet_id' contained the hashtags in `hashtags'"""
-        if len(hashtags) == 0:
+        if hashtags is None or len(hashtags) == 0:
             return 200
 
         body = 'TYPE=HT&ID=%d' % tweet_id
@@ -81,21 +82,19 @@ class RankerNotifier:
 
 
     def notify_tweet(self, tweet):
-        if tweet is None: return
+        if tweet.retweeted_status is not None:
+            self.add_retweet(tweet.id, tweet.retweeted_status.id)
 
-        if tweet.get_retweeted_status() is not None:
-            self.add_retweet(tweet.get_tweet_id(), tweet.get_retweeted_status().get_tweet_id())
+        if tweet.replied_id is not None:
+            self.add_reply(tweet.id, tweet.replied_id)
 
-        if tweet.get_replied_id() is not None:
-            self.add_reply(tweet.get_tweet_id(), tweet.get_replied_id())
+        if len(tweet.mentions) > 0:
+            self.add_mentions(tweet.id, tweet.mentions)
 
-        if len(tweet.get_mentioned_ids()) > 0:
-            self.add_mentions(tweet.get_tweet_id(), tweet.get_mentioned_ids())
+        if len(tweet.hashtags) > 0:
+            self.add_tweet_hashtags(tweet.id, tweet.hashtags)
 
-        if len(tweet.get_hashtags()) > 0:
-            self.add_tweet_hashtags(tweet.get_tweet_id(), tweet.get_hashtags())
-
-        self.add_user_tweets(tweet.get_user_id(), [tweet.get_tweet_id()])
+        self.add_user_tweets(tweet.user.id, [tweet.id])
 
 
     def notify_tweets(self, tweets):

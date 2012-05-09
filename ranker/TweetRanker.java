@@ -1,22 +1,18 @@
-
-
 import graph.TemporaryGraph;
 import graph.PersistentGraph;
+import computer.TweetRankComputer;
+
 import httpserv.RequestHandler;
-import httpserv.StatusHandler;
+import info.ziyan.net.httpserver.HttpServer;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
-
-import com.sun.net.httpserver.HttpServer;
-import computer.TweetRankComputer;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
@@ -29,8 +25,8 @@ public class TweetRanker {
 
 	private static String name = "graph";
 	private static String path = "../data/graph/";
-	//private static String RankingName = "../data/tweetrank.tr";
-	private static String RankingName = "/home/ir12/apache-solr-3.6.0/example/solr/data/external_rank";
+	private static String RankingName = "../data/tweetrank.tr";
+	//private static String RankingName = "/home/ir12/apache-solr-3.6.0/example/solr/data/external_rank";
 	private static long RankingPeriod = MinToMilli(60);  
 	private static long StoringPeriod = MinToMilli(20);
 
@@ -103,14 +99,11 @@ public class TweetRanker {
 		}
 	}
 
-	public TweetRanker(InetSocketAddress addr, int backlog, PersistentGraph graph) throws IOException {
+	public TweetRanker(PersistentGraph graph) throws IOException {
 		super();
 		this.graph = graph;
 		this.ranker = new TweetRankComputer();
-		server = HttpServer.create(addr, backlog);
-		server.createContext("/status", new StatusHandler(this.graph, this.ranker));
-		server.createContext("/", new RequestHandler(graph));
-		server.setExecutor(null);
+		server = new HttpServer(TweetRanker.PORT,  new RequestHandler(this.graph, this.ranker));
 	}
 
 	public void start() {
@@ -120,7 +113,6 @@ public class TweetRanker {
 	}
 
 	public void stop() {
-		server.stop(0);
 		rankerTimer.cancel();
 		storeTimer.cancel();
 	}
@@ -133,7 +125,7 @@ public class TweetRanker {
 
 		try {	
 			graph  = new PersistentGraph(name, path);
-			server = new TweetRanker(new InetSocketAddress(TweetRanker.PORT), 15, graph);
+			server = new TweetRanker(graph);
 			Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownThread(server, graph)));
 		} catch (Throwable e) {
 			logger.fatal("Error on initialization.", e);

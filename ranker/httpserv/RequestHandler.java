@@ -3,16 +3,21 @@ package httpserv;
 import graph.PersistentGraph;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
+import info.ziyan.net.httpserver.HttpContext;
+import info.ziyan.net.httpserver.HttpHandler;
+import info.ziyan.net.httpserver.HttpResponse;
 
 import org.apache.log4j.Logger;
+
+import utils.Time;
+
+import computer.TweetRankComputer;
 
 public class RequestHandler implements HttpHandler {
 	private static final Logger logger = Logger.getLogger("ranker.logger");
@@ -50,9 +55,11 @@ public class RequestHandler implements HttpHandler {
 	};
 
 	private PersistentGraph graph;
+	private TweetRankComputer trcomputer;
 
-	public RequestHandler(PersistentGraph graph) {
+	public RequestHandler(PersistentGraph graph, TweetRankComputer trcomputer) {
 		this.graph = graph;
+		this.trcomputer = trcomputer;
 	}
 
 	private static HashMap<String,ArrayList<String>> parseParams(InputStream is) throws Exception {
@@ -78,44 +85,49 @@ public class RequestHandler implements HttpHandler {
 	}
 
 	/** This method is used to send a Bad Reponse to the client. */
-	private static void sendBadRequestResponse(HttpExchange t, String message) {
+	private static void sendBadRequestResponse(HttpResponse response, String message) {
 		try {
-			logger.debug(message);
-			t.sendResponseHeaders(400, message.length());
-			t.getResponseBody().write(message.getBytes());
-			t.getResponseBody().close();
+			logger.debug(RequestHandler.class.toString() + ": " + message);
+			byte[] msg_bytes = message.getBytes();
+			response.setCode(HttpResponse.HttpResponseCode.BAD_REQUEST);
+			response.begin(msg_bytes.length);
+			response.getBody().write(msg_bytes);
+			response.end();
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error(RequestHandler.class.toString() + ": Error sending response.", e);
 		}
+	}
+	
+	private static void sendServerErrorResponse(HttpResponse response, String message) {
+		
 	}
 
 	/** This method is used to send a OK to the client. */
-	private static void sendOKResponse(HttpExchange t, String message) {
+	private static void sendOKResponse(HttpResponse response, String message) {
 		try {
-			t.sendResponseHeaders(200, message.length());
-			t.getResponseBody().write(message.getBytes());
-			t.getResponseBody().close();
+			byte[] msg_bytes = message.getBytes();
+			response.setCode(HttpResponse.HttpResponseCode.OK);
+			response.begin(msg_bytes.length);
+			response.getBody().write(msg_bytes);
+			response.end();
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error(RequestHandler.class.toString() + ": Error sending response.", e);
 		}
 	}
-
-	/** This method is executed when a new HTTP connection is accepted
-	by the server. */
-	public void handle(HttpExchange t) throws IOException {
-
+	
+	private void handleData(HttpContext context) {
 		// Check POST request
-		if ( !t.getRequestMethod().toUpperCase().equals("POST") ) {
-			sendBadRequestResponse(t, "Only POST requests are valid.");
+		if ( !context.getRequest().getMethod().toUpperCase().equals("POST") ) {
+			sendBadRequestResponse(context.getResponse(), "Only POST requests are valid.");
 			return;
 		}
 
 		// Get action parameters
 		HashMap<String, ArrayList<String>> params = null;
 		try {
-			params = parseParams(t.getRequestBody());
+			params = parseParams(context.getRequest().getBody());
 		} catch (Exception e) {
-			sendBadRequestResponse(t, e.getMessage());
+			sendBadRequestResponse(context.getResponse(), e.getMessage());
 			return;
 		}
 
@@ -129,13 +141,13 @@ public class RequestHandler implements HttpHandler {
 				throw new Exception();
 			}
 		} catch (Exception e) {
-			sendBadRequestResponse(t, "Invalid type '" + typeStr + "'.");
+			sendBadRequestResponse(context.getResponse(), "Invalid type '" + typeStr + "'.");
 			return;
 		}
 		// Check the 'ID' parameter.
 
 		if ( idStr == null || params.get("ID").size() != 1) {
-			sendBadRequestResponse(t, "An unique 'ID' parameter is mandatory.");
+			sendBadRequestResponse(context.getResponse(), "An unique 'ID' parameter is mandatory.");
 			return;
 		}
 
@@ -143,7 +155,7 @@ public class RequestHandler implements HttpHandler {
 		try {
 			id  = Long.valueOf(idStr);
 		} catch (Exception e) {
-			sendBadRequestResponse(t, "Unable to parse id '" + idStr + "' as long.");
+			sendBadRequestResponse(context.getResponse(), "Unable to parse id '" + idStr + "' as long.");
 			return;
 		}
 
@@ -152,7 +164,7 @@ public class RequestHandler implements HttpHandler {
 
 		// Check the 'RefID' parameter.
 		if ( refIDs == null || refIDs.size() == 0 ) {
-			sendBadRequestResponse(t, "At least one 'REFID' parameter must be indicated.");
+			sendBadRequestResponse(context.getResponse(), "At least one 'REFID' parameter must be indicated.");
 			return;
 		}
 
@@ -162,7 +174,7 @@ public class RequestHandler implements HttpHandler {
 				try {
 					refLongIDs.add(Long.valueOf(refID));
 				} catch (Exception e) {
-					sendBadRequestResponse(t, "Failed to parse a refID '" + refID + "' as long.");
+					sendBadRequestResponse(context.getResponse(), "Failed to parse a refID '" + refID + "' as long.");
 					return;
 				}
 			}
@@ -170,29 +182,84 @@ public class RequestHandler implements HttpHandler {
 
 		if (type == Type.RETWEET || type == Type.REPLY) {
 			if (refLongIDs.size() != 1) {
-				sendBadRequestResponse(t, "For RT and RP only one refID is allowed. Size: " + refLongIDs.size());
+				sendBadRequestResponse(context.getResponse(), "For RT and RP only one refID is allowed. Size: " + refLongIDs.size());
 				return;
 			}
-			logger.debug(type + ": "+ id + " " + refLongIDs.get(0));
+			logger.debug(RequestHandler.class.toString() + ": " + type + ": "+ id + " " + refLongIDs.get(0));
 			graph.addRefTweets(id, refLongIDs.get(0));
 		} else if (type == Type.FOLLOWING) {
-			logger.debug(type + ": "+ id + " " + refLongIDs);
+			logger.debug(RequestHandler.class.toString() + ": " + type + ": "+ id + " " + refLongIDs);
 			graph.addFollows(id, refLongIDs);
 		} else if (type == Type.MENTION) {
-			logger.debug(type + ": "+ id + " " + refLongIDs);
+			logger.debug(RequestHandler.class.toString() + ": " + type + ": "+ id + " " + refLongIDs);
 			graph.addMentioned(id, refLongIDs);
 		} else if (type == Type.TWEETS) {
-			logger.debug(type + ": "+ id + " " + refLongIDs);
+			logger.debug(RequestHandler.class.toString() + ": " + type + ": "+ id + " " + refLongIDs);
 			graph.addUserTweets(id, refLongIDs);
 		} else if (type == Type.HASHTAG) {
-			logger.debug(type + ": "+ id + " " + refIDs);
+			logger.debug(RequestHandler.class.toString() + ": " + type + ": "+ id + " " + refIDs);
 			graph.addHashtags(id, refIDs);
 		} else {
-			sendBadRequestResponse(t, "Unknown type: " + type.toString());
+			sendBadRequestResponse(context.getResponse(), "Unknown type: " + type.toString());
 			return;
 		}
 
 		// Send OK response.
-		sendOKResponse(t, "OK!");
+		sendOKResponse(context.getResponse(), "OK!");		
+	}
+	
+	private void handleStatus(HttpContext context) {
+		try {
+			String response = "Persistent graph info:\n======================\n" +
+			"Number of tweets: " + graph.getNumberOfTweets() + "\n" + 
+			"Number of users: " + graph.getNumberOfUsers() + "\n" +
+			"Number of hashtags: " + graph.getNumberOfHashtags() + "\n" +
+			"Average tweets per user: " + graph.getAverageTweetsPerUser() + "\n" +
+			"Average effective friends per user: " + graph.getAverageEffectiveFriendsPerUser() + "\n" +
+			"Average references per tweet: " + graph.getAverageReferencePerTweet() + "\n" +
+			"Average mentions per tweet: " + graph.getAverageMentionsPerTweet() + "\n" +
+			"Average hashtags per tweet: " + graph.getAverageHashtagsPerTweet() + "\n\n";
+
+			response += "TweetRank computation:\n======================\n";
+			TweetRankComputer.State state = trcomputer.getState();
+			Date enddate = trcomputer.getEndDate();
+			Time elapsed = trcomputer.getElapsedTime();
+
+			if ( state == TweetRankComputer.State.WORKING )	response += "State: WORKING\n"; 
+			else response += "State: IDLE\n";
+
+			if ( trcomputer.getTemporaryGraph() != null ) {
+				response += "Number of tweets: " + trcomputer.getTemporaryGraph().getNumberOfTweets() + "\n" + 
+				"Number of users: " + trcomputer.getTemporaryGraph().getNumberOfUsers() + "\n" +
+				"Number of hashtags: " + trcomputer.getTemporaryGraph().getNumberOfHashtags() + "\n" +
+				"Average tweets per user: " + trcomputer.getTemporaryGraph().getAverageTweetsPerUser() + "\n" +
+				"Average effective friends per user: " + trcomputer.getTemporaryGraph().getAverageEffectiveFriendsPerUser() + "\n" +
+				"Average references per tweet: " + trcomputer.getTemporaryGraph().getAverageReferencePerTweet() + "\n" +
+				"Average mentions per tweet: " + trcomputer.getTemporaryGraph().getAverageMentionsPerTweet() + "\n" +
+				"Average hashtags per tweet: " + trcomputer.getTemporaryGraph().getAverageHashtagsPerTweet() + "\n\n";
+			} else {
+				response += "Temporary graph not initialized.\n\n";
+			}
+			response += "Last computation: " + (enddate == null ? "Never" : Time.formatDate("yyyy/MM/dd HH:mm:ss", enddate)) + "\n";
+			if ( elapsed != null )	response += "Elapsed time: " + elapsed;
+
+
+			sendOKResponse(context.getResponse(), response);
+		} catch ( Throwable th ) {
+			logger.error("Error during status recopilation.", th);
+			sendServerErrorResponse(context.getResponse(), "");
+		}		
+	}
+
+	/** This method is executed when a new HTTP connection is accepted
+	by the server. */
+	public void handle(HttpContext context) {
+		if ( context.getRequest().getPath().equals("/") ) {
+			handleData(context);
+		} else if ( context.getRequest().getPath().equals("/status") ) {
+			handleStatus(context);
+		} else {
+			sendBadRequestResponse(context.getResponse(), "Unknown context.");
+		}
 	}
 }
