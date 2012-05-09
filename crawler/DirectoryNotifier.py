@@ -20,6 +20,7 @@ def main(argv):
         usage()
         return -1
 
+    logging.basicConfig(format='[%(levelname)s] %(asctime)s %(module)s:%(funcName)s:%(lineno)d -> %(message)s')
     logger = logging.getLogger('DirectoryNotifier')
     logger.setLevel(logging.INFO)
 

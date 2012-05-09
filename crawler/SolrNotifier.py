@@ -27,7 +27,13 @@ class SolrNotifier:
                               user_followers=tw.user.followers_count,
                               user_friends=tw.user.friends_count,
                               user_statuses=tw.user.statuses_count) )
-        conn.add_many(docs)
+
+        try:
+            conn.add_many(docs)
+        except Exception as ex:
+            if self.logger is not None:
+                self.logger.exception('')
+            return # Ignore exception!
 
         trycommit = True
         while trycommit:
@@ -39,10 +45,10 @@ class SolrNotifier:
                     trycommit = True
                     time.sleep(2)
                 else:
-                    if self.logger is not None: self.logger.exception('Error notifying Solr:')
+                    if self.logger is not None: self.logger.exception('')
                     trycommit = False
             except Exception as ex:
-                if self.logger is not None: self.logger.exception('Error notifying Solr:')
+                if self.logger is not None: self.logger.exception('')
                 trycommit = False
 
         conn.close()
