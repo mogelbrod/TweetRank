@@ -7,12 +7,12 @@ from TweetArrayParser import TweetArrayParser
 from xml.sax import make_parser
 from os import listdir
 
-import sys
+import sys, logging
 
 def usage():
     print 'python DirectoryNotifier.py data_dir'
 
-def tweet_callback(tweet, rnotif):
+def tweet_callback(notif, tweet):
     notif.notify_tweet(tweet) # Notify tweet
 
 def main(argv):
@@ -20,7 +20,10 @@ def main(argv):
         usage()
         return -1
 
-    notif = ServicesNotifier() # Ranker & Solr notifier
+    logger = logging.getLogger('DirectoryNotifier')
+    logger.setLevel(logging.INFO)
+
+    notif = ServicesNotifier(logger) # Ranker & Solr notifier
 
     data_dir = argv[1]
     tweets_dir = data_dir + '/tweets/'
@@ -36,7 +39,7 @@ def main(argv):
         user_id = int(fname.split('.')[0])
         ftype   = fname.split('.')[1]
         fname = users_dir + fname
-        print ('User file: %s' % fname)
+        logger.info('User file: %s' % fname)
 
         if ftype == 'friends':
             f = open(fname, 'r')
@@ -50,7 +53,7 @@ def main(argv):
 
     for fname in ftlist:
         fname = tweets_dir + fname
-        print ('Tweets file: %s' % fname)
+        logger.info('Tweets file: %s' % fname)
         parser = make_parser()
         parser.setContentHandler(TweetArrayParser(lambda tw: tweet_callback(notif, tw)))
         parser.parse(fname)

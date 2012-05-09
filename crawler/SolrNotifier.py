@@ -5,9 +5,10 @@ from Tweet import Tweet
 import solr, time
 
 class SolrNotifier:
-    def __init__(self, host = '176.9.149.66', port = 8983):
+    def __init__(self, host = 'localhost', port = 8983, logger = None):
         self.host = host
         self.port = port
+        self.logger = logger
 
     def notify_tweet(self, tweet):
         self.notify_tweets([tweet])
@@ -38,10 +39,10 @@ class SolrNotifier:
                     trycommit = True
                     time.sleep(2)
                 else:
-                    print ex
+                    if self.logger is not None: self.logger.exception('Error notifying Solr:')
                     trycommit = False
             except Exception as ex:
-                print ex
+                if self.logger is not None: self.logger.exception('Error notifying Solr:')
                 trycommit = False
 
         conn.close()

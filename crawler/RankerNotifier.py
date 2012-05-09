@@ -5,15 +5,18 @@ from tornado.httpclient import AsyncHTTPClient, HTTPClient, HTTPError, HTTPReque
 from tornado.ioloop import IOLoop
 
 class RankerNotifier:
-    def __init__(self, host = "176.9.149.66", port = 4711):
+    def __init__(self, host = "localhost", port = 4711, logger = None):
         AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
         self.http_client = AsyncHTTPClient()
         self.host = host
         self.port = port
+        self.logger = logger
 
     def _handleResponse(self, response):
-        if response.error is not None: print (response.request.body, response.error)
-        #else: print (response.request.body, 'OK')
+        if response.error is not None and self.logger is not None:
+            self.logger.error('Request %s provoked error:\n %s' % (response.request.body, str(response.error)))
+        elif self.logger is not None:
+            self.logger.debug('Request %s finished.' % response.request.body)
         IOLoop.instance().stop()
 
     def _sendRequest(self, request):
