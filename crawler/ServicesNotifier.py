@@ -12,7 +12,8 @@ class ServicesNotifier:
         self.rnotif = RankerNotifier(logger=logger)
 
     def __del__(self):
-        self.flush()
+        if len(self.pending) > 0:
+            self.flush()
         self.pending = None
         self.max_pending = None
         self.snotif = None

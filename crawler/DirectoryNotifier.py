@@ -10,13 +10,13 @@ from os import listdir
 import sys, logging
 
 def usage():
-    print 'python DirectoryNotifier.py data_dir'
+    print 'python DirectoryNotifier.py data_dir [ignore_list]'
 
 def tweet_callback(notif, tweet):
     notif.notify_tweet(tweet) # Notify tweet
 
 def main(argv):
-    if len(argv) != 2:
+    if len(argv) != 2 and len(argv) != 3:
         usage()
         return -1
 
@@ -25,6 +25,14 @@ def main(argv):
     logger.setLevel(logging.INFO)
 
     notif = ServicesNotifier(logger) # Ranker & Solr notifier
+
+
+    ignored = set()
+    if len(argv) == 3:
+        f = open(argv[2])
+        for fname in f:
+            ignored.add(fname.strip())
+        f.close()
 
     data_dir = argv[1]
     tweets_dir = data_dir + '/tweets/'
@@ -40,8 +48,9 @@ def main(argv):
         user_id = int(fname.split('.')[0])
         ftype   = fname.split('.')[1]
         fname = users_dir + fname
-        logger.info('User file: %s' % fname)
+        if fname in ignored: continue
 
+        logger.info('User file: %s' % fname)
         if ftype == 'friends':
             f = open(fname, 'r')
             friends = []
@@ -54,10 +63,14 @@ def main(argv):
 
     for fname in ftlist:
         fname = tweets_dir + fname
+        if fname in ignored: continue
+
         logger.info('Tweets file: %s' % fname)
         parser = make_parser()
         parser.setContentHandler(TweetArrayParser(lambda tw: tweet_callback(notif, tw)))
         parser.parse(fname)
+
+    return 0
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
