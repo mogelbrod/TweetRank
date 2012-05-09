@@ -3,6 +3,7 @@
 
 from ServicesNotifier import ServicesNotifier
 from TweetArrayParser import TweetArrayParser
+from EscapeXMLIllegalCharEntities import EscapeXMLIllegalCharEntities
 
 from xml.sax import make_parser
 from os import listdir
@@ -12,21 +13,20 @@ import sys, logging
 def usage():
     print 'python DirectoryNotifier.py data_dir [ignore_list]'
 
-def tweet_callback(notif, tweet):
-    notif.notify_tweet(tweet) # Notify tweet
-
 def main(argv):
     if len(argv) != 2 and len(argv) != 3:
         usage()
         return -1
 
+    # Logger configuration
     logging.basicConfig(format='[%(levelname)s] %(asctime)s %(module)s:%(funcName)s:%(lineno)d -> %(message)s')
     logger = logging.getLogger('DirectoryNotifier')
     logger.setLevel(logging.INFO)
 
-    notif = ServicesNotifier(logger) # Ranker & Solr notifier
+    # Create Services Notifier (Ranker & Solr notifier)
+    notif = ServicesNotifier(logger)
 
-
+    # Load ignored files
     ignored = set()
     if len(argv) == 3:
         f = open(argv[2])
@@ -34,6 +34,7 @@ def main(argv):
             ignored.add(fname.strip())
         f.close()
 
+    # Prepare data to process
     data_dir = argv[1]
     tweets_dir = data_dir + '/tweets/'
     users_dir  = data_dir + '/users/'
@@ -44,6 +45,7 @@ def main(argv):
     fulist.sort()
     ftlist.sort()
 
+    # Process users data
     for fname in fulist:
         user_id = int(fname.split('.')[0])
         ftype   = fname.split('.')[1]
@@ -59,16 +61,20 @@ def main(argv):
             notif.notify_user_friends(user_id, friends)
             f.close()
         else:
-            pass # Add hashtags used by the user
+            pass # TODO: Add hashtags used by the user
 
+    # Process tweet data
     for fname in ftlist:
         fname = tweets_dir + fname
         if fname in ignored: continue
 
         logger.info('Tweets file: %s' % fname)
         parser = make_parser()
-        parser.setContentHandler(TweetArrayParser(lambda tw: tweet_callback(notif, tw)))
-        parser.parse(fname)
+        parser.setContentHandler(TweetArrayParser(lambda tw: notif.notify_tweet(tw)))
+        f = open(fname)
+        fdata = EscapeXMLIllegalCharEntities(f.read())
+        f.close()
+        parser.parse(fdata)
 
     return 0
 
