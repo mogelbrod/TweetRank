@@ -49,7 +49,7 @@ class SolrNotifier:
                              user_statuses=tw.user.statuses_count)
                 except Exception as ex:
                     if self.logger is not None:
-                    self.logger.exception('Adding tweet failed: %s' % str(tw))
+                        self.logger.exception('Adding tweet failed: %s' % str(tw))
 
         trycommit = True
         while trycommit:
