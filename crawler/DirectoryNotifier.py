@@ -70,7 +70,7 @@ def main(argv):
         logger.info('Tweets file: %s' % fname)
         parser = make_parser()
         parser.setContentHandler(TweetArrayParser(lambda tw: notif.notify_tweet(tw)))
-        parser.parse(fdata)
+        parser.parse(fname)
 
     return 0
 
