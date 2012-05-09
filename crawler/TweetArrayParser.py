@@ -83,5 +83,5 @@ class TweetArrayParser(ContentHandler):
             self.stack.pop()
 
     def characters(self, content):
-        self.pcharacters += content.encode('utf-8')
+        self.pcharacters += content
 

@@ -43,4 +43,4 @@ class Tweet:
         if self.retweeted_status is not None:
             tstr += ', RT: %s' % repr(self.retweeted_status)
         tstr += '}'
-        return tstr.encode('utf-8')
+        return tstr
