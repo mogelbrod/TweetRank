@@ -1,0 +1,30 @@
+// Compile with: neato -Tpng:cairo -o"mc-threads-1.png" -Kneato
+digraph "graph-a" {
+	graph [margin = 0 0, truecolor, dpi = 200];
+	node [shape = box, fixedsize = true, width = 0.5,
+	      fontname = "Arial", fontsize = 18,
+	      style = filled, fillcolor = "#cccccc"];
+	edge [arrowsize = 1, penwidth = 1.6,
+	      color = "#ff3333"];
+
+	0 [ pos = "0,1!" ];
+	1 [ pos = "1,1!" ];
+	2 [ pos = "0,0!" ];
+	3 [ pos = "1,0!" ];
+
+	// First thread
+	0 [ fillcolor = "#33ee33" ];
+	0 -> 3 -> 1 -> 0;
+	
+	// Second thread
+	1 [ fillcolor = "#33ee33" ];
+	1 -> 0 -> 2 -> 3;
+
+	// Third thread
+	2 [ fillcolor = "#33ee33" ];
+	2 -> 0 -> 1 -> 0;
+	
+	// Fourth thread
+	3 [ fillcolor = "#33ee33" ];
+	3 -> 2 -> 1 -> 0;
+}
