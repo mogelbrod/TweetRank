@@ -123,20 +123,19 @@ public class TweetRankComputer {
 	 * @throws ConcurrentComputationException is thrown if there is a concurrent computation.
 	 * @throws NullTemporaryGraphException if the graph was not initialized.
 	 */
-	public TreeMap<Long,Double> compute() throws ConcurrentComputationException, NullTemporaryGraphException {
+	public TreeMap<Long,Double> compute(String path, String name, Integer version) throws ConcurrentComputationException, NullTemporaryGraphException {
 		cLock.lock();
 		TreeMap<Long,Double> tweetrank = null;
 		try {
-			// Check if the graph is null
-			if ( graph == null )
-				throw new NullTemporaryGraphException();
+			graph = new TemporaryGraph(path, name, version);
+			if ( graph != null ) {
+				// Determine the path length to be used
+				M = graph.getNumberOfTweets()/100;
+				if (M < 100) M = 100;
 
-			// Determine the path length to be used
-			M = graph.getNumberOfTweets()/100;
-			if (M < 100) M = 100;
-
-			// Start computation!
-			tweetrank = MCCompletePath();
+				// Start computation!
+				tweetrank = MCCompletePath();
+			}
 		} finally {
 			cLock.unlock();
 		}
@@ -256,17 +255,6 @@ public class TweetRankComputer {
 			//norm.put(entry.getKey(), entry.getValue()/sum.doubleValue());
 		}
 		return norm;
-	}
-
-
-	/**
-	 * Sets the temporary graph to be used to compute the TweetRank.
-	 * @param graph Temporary graph that will be used hereinafter.
-	 */
-	public void setTemporaryGraph(TemporaryGraph graph) {
-		cLock.lock();
-		this.graph = graph;
-		cLock.unlock();
 	}
 
 	/**
