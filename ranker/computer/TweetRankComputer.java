@@ -49,7 +49,7 @@ public class TweetRankComputer {
 	public static class NullTemporaryGraphException extends Exception {
 		private static final long serialVersionUID = -7656094713092868726L;
 	}
-	
+
 	//private int tidx;
 	private HashMap<Long,Long> counter = new HashMap<Long, Long> ();
 	private Random rseed = new Random();
@@ -124,19 +124,13 @@ public class TweetRankComputer {
 	 * @throws NullTemporaryGraphException if the graph was not initialized.
 	 */
 	public TreeMap<Long,Double> compute() throws ConcurrentComputationException, NullTemporaryGraphException {
+		cLock.lock();
 		TreeMap<Long,Double> tweetrank = null;
-
-		// Check if there is another thread already computing the tweetrank
-		if ( !cLock.tryLock() ) 
-			throw new ConcurrentComputationException();
-
-		// Check if the graph is null
-		if ( graph == null ) {
-			cLock.unlock();
-			throw new NullTemporaryGraphException();
-		}
-
 		try {
+			// Check if the graph is null
+			if ( graph == null )
+				throw new NullTemporaryGraphException();
+
 			// Determine the path length to be used
 			M = graph.getNumberOfTweets()/100;
 			if (M < 100) M = 100;
@@ -146,7 +140,6 @@ public class TweetRankComputer {
 		} finally {
 			cLock.unlock();
 		}
-
 		return tweetrank;
 	}	
 
@@ -162,7 +155,7 @@ public class TweetRankComputer {
 		// Work started...
 		state = State.WORKING;
 		StartEndDate[0] = new Date();
-		
+
 		for(Long tw : graph.getTweetList()) {
 			for(int i = 1; i <= M; ++i) {
 				Long currentID = tw;
