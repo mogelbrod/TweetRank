@@ -101,6 +101,7 @@ public class PersistentGraph {
 	}
 
 	private void lockAll() {
+		tweetsLock.lock();
 		userTweetsLock.lock();
 		mentionedLock.lock();
 		followsLock.lock();
@@ -109,6 +110,7 @@ public class PersistentGraph {
 	}
 
 	private void unlockAll() {
+		tweetsLock.unlock();
 		mentionedLock.unlock();
 		followsLock.unlock();
 		refTweetsLock.unlock();
