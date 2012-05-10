@@ -21,6 +21,8 @@ class ServicesNotifier:
 
     def notify_tweet(self, tweet):
         self.pending.append(tweet)
+        if tweet.retweeted_status is not None:
+            self.pending.append(tweet.retweeted_status)
         if len(self.pending) >= self.max_pending:
             self.flush()
 

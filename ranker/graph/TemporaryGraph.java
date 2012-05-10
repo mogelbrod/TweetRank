@@ -8,36 +8,36 @@ public class TemporaryGraph {
 	private static final Logger logger = Logger.getLogger("ranker.logger");
 
 	/** Contains all tweets */
-	private Hashtable<Long,Long> tweetSet;
+	private HashMap<Long,Long> tweetSet;
 	private ArrayList<Long> tweetList;
 
 	/** Maps users to tweets */
-	private Hashtable<Long,ArrayList<Long>> userTweets;
+	private HashMap<Long,ArrayList<Long>> userTweets;
 
 	/** Maps a tweet to a list of user mentions */
-	private Hashtable<Long,ArrayList<Long>> mentioned;
+	private HashMap<Long,ArrayList<Long>> mentioned;
 
 	/** Maps a user to a list of users he/she follows */
-	private Hashtable<Long,ArrayList<Long>> follows;
+	private HashMap<Long,ArrayList<Long>> follows;
 
 	/** Map a reply/retweet to the original tweet */
-	private Hashtable<Long,Long> refTweets;
+	private HashMap<Long,Long> refTweets;
 
 	/** Map a tweet to a list of hashtags */
-	private Hashtable<Long,ArrayList<String>> hashtagsByTweet;
-	private Hashtable<String,ArrayList<Long>> tweetsByHashtag;
+	private HashMap<Long,ArrayList<String>> hashtagsByTweet;
+	private HashMap<String,ArrayList<Long>> tweetsByHashtag;
 
-	private static <K,V> Hashtable<K,ArrayList<V>> convertHashtable(Hashtable<K, HashSet<V>> in) {
-		Hashtable<K,ArrayList<V>> out = new Hashtable<K,ArrayList<V>>();
+	private static <K,V> HashMap<K,ArrayList<V>> convertHashMap(HashMap<K, HashSet<V>> in) {
+		HashMap<K,ArrayList<V>> out = new HashMap<K,ArrayList<V>>();
 		for ( Map.Entry<K, HashSet<V>> entry : in.entrySet() ) {
 			out.put(entry.getKey(), new ArrayList<V>(entry.getValue()));
 		}
 		return out;
 	}
 
-	private static Hashtable<Long,ArrayList<Long>> convertFilteredFriends(Hashtable<Long, HashSet<Long>> friends, 
-			Hashtable<Long,ArrayList<Long>> userTweets) {
-		Hashtable<Long, ArrayList<Long>> filtered_friends = new Hashtable<Long, ArrayList<Long>>(); 
+	private static HashMap<Long,ArrayList<Long>> convertFilteredFriends(HashMap<Long, HashSet<Long>> friends, 
+			HashMap<Long,ArrayList<Long>> userTweets) {
+		HashMap<Long, ArrayList<Long>> filtered_friends = new HashMap<Long, ArrayList<Long>>(); 
 		for ( Map.Entry<Long, HashSet<Long>> entry : friends.entrySet() ) {
 			Long user = entry.getKey(); // Current user
 			ArrayList<Long> f_userfriends = new ArrayList<Long>(); // Filtered list of user's friends
@@ -61,13 +61,13 @@ public class TemporaryGraph {
 	public TemporaryGraph(PersistentGraph sgraph) {
 		sgraph.lockAll();
 		try {
-			tweetSet = new Hashtable<Long,Long>(sgraph.getTweetSet());
+			tweetSet = new HashMap<Long,Long>(sgraph.getTweetSet());
 			tweetList = new ArrayList<Long>(tweetSet.keySet());
-			refTweets = new Hashtable<Long,Long>(sgraph.getRefTweets());
-			userTweets = convertHashtable(sgraph.getUserTweets());
-			mentioned = convertHashtable(sgraph.getMentioned());
-			hashtagsByTweet = convertHashtable(sgraph.getHashtagsByTweet());
-			tweetsByHashtag = convertHashtable(sgraph.getTweetsByHashtag());
+			refTweets = new HashMap<Long,Long>(sgraph.getRefTweets());
+			userTweets = convertHashMap(sgraph.getUserTweets());
+			mentioned = convertHashMap(sgraph.getMentioned());
+			hashtagsByTweet = convertHashMap(sgraph.getHashtagsByTweet());
+			tweetsByHashtag = convertHashMap(sgraph.getTweetsByHashtag());
 			follows = convertFilteredFriends(sgraph.getFollows(), userTweets);
 		} catch (Throwable t) {
 			logger.error("Error creating a new temporary graph.", t);			

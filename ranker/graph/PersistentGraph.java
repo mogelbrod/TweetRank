@@ -17,23 +17,23 @@ public class PersistentGraph {
 	private final ReentrantLock hashtagsLock = new ReentrantLock(true);
 
 	/** Contains all tweets */
-	private Hashtable<Long,Long> tweetSet;
+	private HashMap<Long,Long> tweetSet;
 
 	/** Maps users to tweets */
-	private Hashtable<Long,HashSet<Long>> userTweets;
+	private HashMap<Long,HashSet<Long>> userTweets;
 
 	/** Maps a tweet to a list of user mentions */
-	private Hashtable<Long,HashSet<Long>> mentioned;
+	private HashMap<Long,HashSet<Long>> mentioned;
 
 	/** Maps a user to a list of users he/she follows */
-	private Hashtable<Long,HashSet<Long>> follows;
+	private HashMap<Long,HashSet<Long>> follows;
 
 	/** Map a reply/retweet to the original tweet */
-	private Hashtable<Long,Long> refTweets;
+	private HashMap<Long,Long> refTweets;
 
 	/** Map a tweet to a list of hashtags */
-	private Hashtable<Long,HashSet<String>> hashtagsByTweet;
-	private Hashtable<String,HashSet<Long>> tweetsByHashtag;
+	private HashMap<Long,HashSet<String>> hashtagsByTweet;
+	private HashMap<String,HashSet<Long>> tweetsByHashtag;
 
 	private String name;
 	private String path;
@@ -69,26 +69,26 @@ public class PersistentGraph {
 		this.name       = name;
 		this.path       = path;
 
-		tweetSet = (Hashtable<Long, Long>)loadObject(path, name + "__TweetSet");
-		if ( tweetSet == null ) tweetSet = new Hashtable<Long,Long>();
+		tweetSet = (HashMap<Long, Long>)loadObject(path, name + "__TweetSet");
+		if ( tweetSet == null ) tweetSet = new HashMap<Long,Long>();
 
-		mentioned  = (Hashtable<Long, HashSet<Long>>)loadObject(path, name + "__Mention");
-		if (mentioned == null) mentioned = new Hashtable<Long, HashSet<Long>>();
+		mentioned  = (HashMap<Long, HashSet<Long>>)loadObject(path, name + "__Mention");
+		if (mentioned == null) mentioned = new HashMap<Long, HashSet<Long>>();
 
-		follows  = (Hashtable<Long, HashSet<Long>>)loadObject(path, name + "__Follows");
-		if (follows == null) follows = new Hashtable<Long, HashSet<Long>>();
+		follows  = (HashMap<Long, HashSet<Long>>)loadObject(path, name + "__Follows");
+		if (follows == null) follows = new HashMap<Long, HashSet<Long>>();
 
-		refTweets  = (Hashtable<Long, Long>)loadObject(path, name + "__RefTweets");
-		if (refTweets == null) refTweets = new Hashtable<Long, Long>();
+		refTweets  = (HashMap<Long, Long>)loadObject(path, name + "__RefTweets");
+		if (refTweets == null) refTweets = new HashMap<Long, Long>();
 
-		userTweets  = (Hashtable<Long, HashSet<Long>>)loadObject(path, name + "__UserTweets");
-		if (userTweets == null) userTweets = new Hashtable<Long, HashSet<Long>>();		
+		userTweets  = (HashMap<Long, HashSet<Long>>)loadObject(path, name + "__UserTweets");
+		if (userTweets == null) userTweets = new HashMap<Long, HashSet<Long>>();		
 
-		hashtagsByTweet  = (Hashtable<Long, HashSet<String>>)loadObject(path, name + "__HashtagsByTweet");
-		if (hashtagsByTweet == null) hashtagsByTweet = new Hashtable<Long, HashSet<String>>();	
+		hashtagsByTweet  = (HashMap<Long, HashSet<String>>)loadObject(path, name + "__HashtagsByTweet");
+		if (hashtagsByTweet == null) hashtagsByTweet = new HashMap<Long, HashSet<String>>();	
 
-		tweetsByHashtag  = (Hashtable<String, HashSet<Long>>)loadObject(path, name + "__TweetsByHashtag");
-		if (tweetsByHashtag == null) tweetsByHashtag = new Hashtable<String, HashSet<Long>>();		
+		tweetsByHashtag  = (HashMap<String, HashSet<Long>>)loadObject(path, name + "__TweetsByHashtag");
+		if (tweetsByHashtag == null) tweetsByHashtag = new HashMap<String, HashSet<Long>>();		
 	}
 
 	public void store() {
@@ -312,49 +312,49 @@ public class PersistentGraph {
 	/**
 	 * @return the tweetSet
 	 */
-	public Hashtable<Long, Long> getTweetSet() {
+	public HashMap<Long, Long> getTweetSet() {
 		return tweetSet;
 	}
 
 	/**
 	 * @return the userTweets
 	 */
-	public Hashtable<Long, HashSet<Long>> getUserTweets() {
+	public HashMap<Long, HashSet<Long>> getUserTweets() {
 		return userTweets;
 	}
 
 	/**
 	 * @return the mentioned
 	 */
-	public Hashtable<Long, HashSet<Long>> getMentioned() {
+	public HashMap<Long, HashSet<Long>> getMentioned() {
 		return mentioned;
 	}
 
 	/**
 	 * @return the follows
 	 */
-	public Hashtable<Long, HashSet<Long>> getFollows() {
+	public HashMap<Long, HashSet<Long>> getFollows() {
 		return follows;
 	}
 
 	/**
 	 * @return the refTweets
 	 */
-	public Hashtable<Long, Long> getRefTweets() {
+	public HashMap<Long, Long> getRefTweets() {
 		return refTweets;
 	}
 
 	/**
 	 * @return the hashtagsByTweet
 	 */
-	public Hashtable<Long, HashSet<String>> getHashtagsByTweet() {
+	public HashMap<Long, HashSet<String>> getHashtagsByTweet() {
 		return hashtagsByTweet;
 	}
 
 	/**
 	 * @return the tweetsByHashtag
 	 */
-	public Hashtable<String, HashSet<Long>> getTweetsByHashtag() {
+	public HashMap<String, HashSet<Long>> getTweetsByHashtag() {
 		return tweetsByHashtag;
 	}
 }

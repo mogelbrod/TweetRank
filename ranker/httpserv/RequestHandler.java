@@ -79,28 +79,6 @@ public class RequestHandler implements HttpHandler {
 		return params;
 	}
 
-	/*private static HashMap<String,ArrayList<String>> parseParams(InputStream is) throws Exception {
-		HashMap<String,ArrayList<String>> params = new HashMap<String,ArrayList<String>>(); 
-		InputStreamReader isr = new InputStreamReader(is, "UTF-8");
-		BufferedReader br = new BufferedReader(isr);
-		String body_line;
-
-		while ( (body_line = br.readLine()) != null ) {
-			String[] parts = body_line.split("&");
-			for(int i = 0; i < parts.length; ++i) {
-				String[] parameter = parts[i].split("=");
-				if (parameter.length != 2 || parameter[0].length() == 0 || parameter[1].length() == 0)
-					throw new Exception("Bad parameter for key '" + parameter[0] + "'.");
-				parameter[0] = parameter[0].toUpperCase();
-				ArrayList<String> values = params.get(parameter[0]);
-				if ( values == null ) values = new ArrayList<String>();
-				values.add(parameter[1]);
-				params.put(parameter[0], values);
-			}
-		}
-		return params;
-	}*/
-
 	/** This method is used to send a Bad Reponse to the client. */
 	private static void sendBadRequestResponse(HttpResponse response, String message) {
 		try {

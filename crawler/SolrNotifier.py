@@ -33,24 +33,6 @@ class SolrNotifier:
                 if self.logger is not None:
                     self.logger.exception('Adding tweet failed: %s' % str(tw))
 
-            # Notify about the retweeted status
-            if tw.retweeted_status is not None:
-                tw = tw.retweeted_status
-                try:
-                    conn.add(id=tw.id,
-                             created_at=tw.date,
-                             text=tw.text,
-                             hashtag=tw.hashtags,
-                             retweet_count=tw.retweet_count,
-                             user_nick=tw.user.nick,
-                             user_name=tw.user.name,
-                             user_followers=tw.user.followers_count,
-                             user_friends=tw.user.friends_count,
-                             user_statuses=tw.user.statuses_count)
-                except Exception as ex:
-                    if self.logger is not None:
-                        self.logger.exception('Adding tweet failed: %s' % str(tw))
-
         trycommit = True
         while trycommit:
             try:
