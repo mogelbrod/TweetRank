@@ -335,7 +335,7 @@ public class PersistentGraph {
 							synchronized (hashtagsByTweet) {
 								synchronized (tweetsByHashtag) {
 									try {
-										tTweetSet = new HashMap<Long,Long>(tweetSet);
+					 					tTweetSet = new HashMap<Long,Long>(tweetSet);
 										tRefTweets = new HashMap<Long,Long>(refTweets);
 										tUserTweets = convertHashMap(userTweets);
 										tMentioned = convertHashMap(mentioned);
