@@ -1,33 +1,40 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 
 from OsUtils import safemkdir, safemv, generate_tmp_fname
+from Tweet import Tweet
+from SolrNotifier import SolrNotifier
+from RankerNotifier import RankerNotifier
 from threading import Lock
 from os import listdir
+from xml.dom.minidom import parse
+from errno import ENOENT
 
 class UsersWarehouse:
-    def __init__(self, users_dir):
+    def __init__(self, users_dir, tweets_dir):
         self.lock = Lock()
-        self.usersdir = users_dir
+        self.usersdir  = users_dir
+        self.tweetsdir = tweets_dir
         self.users = set()
-        self.__load()
+        self.snotif = SolarNotifier()
+        self.rnotif = RankerNotifier()
+        self._load()
 
-    def __load(self):
+    def _load(self):
         safemkdir(self.usersdir)
+        safemkdir(self.tweetsdir)
         self.lock.acquire()
         try:
             for f in listdir(self.usersdir):
                 f = f.split('.')
                 self.users.add(int(f[0]))
-        except Exception as ex:
-            raise ex
         finally:
-            self.lock.release()        
+            self.lock.release()
 
     def __len__(self):
         return len(self.users)
 
-    def __contains__(self, user_id): 
+    def __contains__(self, user_id):
         return user_id in self.users
 
     def __iter__(self):
@@ -37,13 +44,9 @@ class UsersWarehouse:
         for uid in self.users:
             yield uid
 
-    def __load_user_data(self, user_id):
+    def _load_user_data(self, user_id):
+        friends, hashtags = set(), dict()
         try:
-            friends, hashtags = set(), dict()
-            files_in_dir = listdir(self.usersdir)
-            if ('%d.friends' % user_id) not in files_in_dir or ('%d.hashtags' % user_id) not in files_in_dir:
-                return friends, hashtags
-
             # Load friends
             f = open(self.usersdir + ('/%d.friends' % user_id), 'r')
             for l in f:
@@ -57,57 +60,70 @@ class UsersWarehouse:
                 if len(l) < 2: continue
                 hashtags[l[0]] = int(l[1])
             f.close()
-            
-            return friends, hashtags
-        except Exception as ex:
-            raise ex
+        except IOError as e:
+            if e.errno != ENOENT:
+                raise (e)
+        return friends, hashtags
 
-    def __save_user_data(self, user_id, friends, hashtags):
-        try:
-            # Save friends
+    def _save_user_data(self, user_id, friends, hashtags):
+        # Save friends
+        if len(friends) > 0:
             friends_file = self.usersdir + ('/%s.friends' % user_id)
-            hashtags_file = self.usersdir + ('/%s.hashtags' % user_id)
             ftmp = generate_tmp_fname(friends_file)
-            htmp = generate_tmp_fname(hashtags_file)
-            
             f = open(ftmp, 'w')
             for friend_id in friends:
                 f.write('%d\n' % friend_id)
             f.close()
+            safemv(ftmp, friends_file)
 
-            # Save hashtags
+        # Save hashtags
+        if len(hashtags) > 0:
+            hashtags_file = self.usersdir + ('/%s.hashtags' % user_id)
+            htmp = generate_tmp_fname(hashtags_file)
             f = open(htmp, 'w')
             for ht in hashtags.items():
-                f.write('%s %d\n' % (ht[0], ht[1]))
+                f.write('%s %d\n' % ht)
             f.close()
-
-            safemv(ftmp, friends_file)
             safemv(htmp, hashtags_file)
-        except Exception as ex:
-            raise ex
-        
-    def get(self, user_id):
-        friends,hashtags=None,None
-        self.lock.acquire()
-        try:
-            friends,hashtags=self.__load_user_data(user_id)
-        except Exception as ex:
-            raise ex
-        finally:
-            self.lock.release()
-        return friends,hashtags
 
-    def add(self, user_id, friends_ids, hashtags):
+    def add_user_tweets(self, user_id, set_of_tweets):
+        if len(set_of_tweets) == 0: return
+
+        self.rnotif.notify_tweets(set_of_tweets) # Ranker notifier
+        self.snotif.notify_tweets(set_of_tweets) # Solr notifier
+        self.snotif.flush()
+
+        tweets_file = generate_tmp_fname('%s/%d.tweets' % (self.tweetsdir, user_id))
+        f = open(tweets_file, 'w')
+        f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+        f.write('<statuses type="array">\n')
+        for tweet in set_of_tweets:
+            f.write(tweet.get_xml() + '\n')
+        f.write('</statuses>')
+        f.close()
+
+    def add_user_friends_and_hashtags(self, user_id, friends, hashtags):
+        self.rnotif.add_user_friends(user_id, friends)
+        #self.rnotif.add_user_hashtags(user_id, hashtags) # TODO: Implement!
+
         self.lock.acquire()
         try:
-            stored_friends, stored_hashtags = self.__load_user_data(user_id)
-            stored_friends.update(friends_ids)
+            stored_friends, stored_hashtags = self._load_user_data(user_id)
+            stored_friends.update(friends)
             for ht in hashtags:
                 c = stored_hashtags.get(ht, 0)
                 c = c+1
                 stored_hashtags[ht] = c
-            self.__save_user_data(user_id, stored_friends, stored_hashtags)
-        except Exception as ex:
-            raise ex
+            self._save_user_data(user_id, stored_friends, stored_hashtags)
         finally:
             self.lock.release()
+
+    def get(self, user_id):
+        friends,hashtags=None,None
+        self.lock.acquire()
+        try:
+            friends,hashtags=self._load_user_data(user_id)
+        finally:
+            self.lock.release()
+        return friends,hashtags
+

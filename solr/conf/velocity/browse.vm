@@ -1,0 +1,29 @@
+#set($searcher=$request.searcher)
+#set($params=$request.params)
+#set($clusters = $response.response.clusters)
+#set($mltResults = $response.response.get("moreLikeThis"))
+#set($annotate = $params.get("annotateBrowse"))
+#if($response.response.spellcheck.suggestions and $response.response.spellcheck.suggestions.size() > 0)
+  Did you mean <a href="#url_for_home?q=$esc.url($response.response.spellcheck.suggestions.collation)#if($list.size($request.params.getParams('fq')) > 0)&#fqs($request.params.getParams('fq'))#end#debug">$response.response.spellcheck.suggestions.collation</a>?
+#end
+
+<div id="results">
+	#if($response.response.get('grouped'))
+		#foreach($grouping in $response.response.get('grouped'))
+			#parse("hitGrouped.vm")
+		#end
+	#else
+		#foreach($doc in $response.results)
+			#parse("hit.vm")
+		#end
+	#end
+</div>
+
+<p class="pagination">
+	#if($response.response.get('grouped'))
+	#else
+		#link_to_previous_page("previous")
+		<span class="pages">Page <span class="current">$page.current_page_number</span> of <span class="total">$page.page_count</span></span>
+		#link_to_next_page("next")
+	#end
+</p>

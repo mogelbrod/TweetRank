@@ -1,0 +1,101 @@
+/** Reset */
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd,
+q, s, samp, small, strike, strong, sub, sup, tt, var, dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	outline: 0;
+	font-size: 100%;
+	font: inherit;
+	vertical-align: baseline;
+} 
+ol, ul { list-style: none; }
+blockquote, q { quotes: none; }
+blockquote:before, blockquote:after, q:before, q:after {
+	content: '';
+	content: none;
+}
+
+/** Basic elements */
+
+a { color: #135; }
+
+pre {
+	white-space: pre-wrap;
+	font: normal 12px/15px monospace;
+}
+
+/** Layout */
+
+html {
+	font: normal 13px/1.5 Arial, sans-serif;
+	overflow-y: scroll;
+}
+
+#header {
+	padding: 10px 6px;
+	border-bottom: 2px solid #999;
+	overflow: auto;
+}
+#header h1 {
+	float: left;
+	margin: 0 30px 0 0;
+	font: bold 24px/30px Arial, sans-serif;
+}
+#header h1 a { text-decoration: none; }
+#query-form { float: left; }
+#query-form .inputs { margin-top: 4px; }
+#q {
+	width: 300px;
+	font: normal 16px/20px Arial, sans-serif;
+}
+
+#header #toggle-debug, #header .num-results {
+	float: right;
+	margin: 10px 10px 0 10px;
+}
+#header #toggle-debug { float: left; }
+
+#debug-query {
+	display: block
+	margin: 10px 5px 2px;
+	clear: both;
+	display: none;
+}
+
+#content {
+	padding: 10px;
+}
+
+.field .name { font-weight: bold; }
+
+p.pagination { text-align: center; }
+p.pagination .pages { margin: 0 8px; }
+
+/** Results */
+
+.doc {
+	margin: 4px 0;
+	color: #000;
+	background: #eee;
+	border: 1px solid #999;
+}
+
+.doc:nth-child(2n+1) {
+	background: #ddd;
+}
+
+.doc .meta {
+	padding: 2px 6px;
+	color: #000;
+	background: #9ab;
+}
+
+.doc .user_nick { font-weight: bold; }
+.doc .time, .doc .hashtags { margin-left: 20px; }
+.doc .time { color: #345; }
+.doc .score { float: right; }
+.doc .text { padding: 4px 6px; }

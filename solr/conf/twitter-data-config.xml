@@ -1,0 +1,34 @@
+<!--
+http://wiki.apache.org/solr/DataImportHandler
+-->
+<dataConfig>
+<dataSource type="FileDataSource" />
+	<document>
+	<!--
+	Source directory. Imports all xml files
+	-->
+		<entity name="file" processor="FileListEntityProcessor" baseDir="${dataimporter.request.directory}" fileName="^.*\.xml$" recursive="true" rootEntity="false" dataSource="null">
+			<!--
+			For each tweet in file f.
+			-->
+			<entity name="tweet" processor="XPathEntityProcessor" forEach="/statuses/status" url="${file.fileAbsolutePath}" pk="id" transformer="DateFormatTransformer">
+				<field column="id" xpath="/statuses/status/id" />
+				<field column="created_at" xpath="/statuses/status/created_at" 
+				    dateTimeFormat="EEE MMM dd HH:mm:ss Z yyyy" locale="en"/>
+
+
+				<field column="text" xpath="/statuses/status/text" />
+				<field column="user_id" xpath="/statuses/status/user/id" />
+				<field column="user_name" xpath="/statuses/status/user/name" />
+				<field column="user_nick" xpath="/statuses/status/user/screen_name" />
+				<field column="user_followers" xpath="/statuses/status/user/followers_count" />
+				<field column="user_friends" xpath="/statuses/status/user/friends_friend" />
+				<field column="user_statuses" xpath="/statuses/status/user/statuses_count" />
+				<field column="hashtag" xpath="/statuses/status/entities/hashtags/hashtag/text" />
+
+				<field column="retweet_count" xpath="/statuses/status/retweet_count" />
+				
+			</entity>
+		</entity>
+	</document>
+</dataConfig>

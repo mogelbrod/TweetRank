@@ -1,0 +1,28 @@
+<div class="hit">
+	<div class="meta">
+		#linked_field('user_nick')
+		<a class="time" href="http://twitter.com/#field('user_nick')/status/#field('id')">#field('created_at')</a>
+		<span class="hashtags">#linked_field('hashtag')</span>
+		<span class="score">#field('score')</span>
+		<span class="rank">#field('rank')</span>
+	</div>
+	<p class="text">#field('text')</p>
+
+#if($params.getBool("debugQuery",false))
+	<div class="debug">
+		<a href="#" onclick="jQuery(this).next('pre').toggle(); return false;">Explain</a>
+		<pre style="display:none">$response.getExplainMap().get($doc.getFirstValue('id'))</pre>
+		<a href="#" onclick="jQuery(this).next('ul').toggle(); return false;">Fields</a>
+		<ul style="display:none">
+			#foreach($fieldname in $doc.fieldNames)
+				<li class="field"><span class="name">$fieldname:</span> <span class="value">
+				#foreach($value in $doc.getFieldValues($fieldname))
+					$value
+				#end
+				</span></li>
+			#end
+		</ul>
+	</div>
+#end
+
+</div>
