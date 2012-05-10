@@ -2,11 +2,7 @@ package graph;
 
 import java.util.*;
 
-import org.apache.log4j.Logger;
-
 public class TemporaryGraph {
-	private static final Logger logger = Logger.getLogger("ranker.logger");
-
 	/** Contains all tweets */
 	private HashMap<Long,Long> tweetSet;
 	private ArrayList<Long> tweetList;
@@ -27,53 +23,15 @@ public class TemporaryGraph {
 	private HashMap<Long,ArrayList<String>> hashtagsByTweet;
 	private HashMap<String,ArrayList<Long>> tweetsByHashtag;
 
-	private static <K,V> HashMap<K,ArrayList<V>> convertHashMap(HashMap<K, HashSet<V>> in) {
-		HashMap<K,ArrayList<V>> out = new HashMap<K,ArrayList<V>>();
-		for ( Map.Entry<K, HashSet<V>> entry : in.entrySet() ) {
-			out.put(entry.getKey(), new ArrayList<V>(entry.getValue()));
-		}
-		return out;
-	}
-
-	private static HashMap<Long,ArrayList<Long>> convertFilteredFriends(HashMap<Long, HashSet<Long>> friends, 
-			HashMap<Long,ArrayList<Long>> userTweets) {
-		HashMap<Long, ArrayList<Long>> filtered_friends = new HashMap<Long, ArrayList<Long>>(); 
-		for ( Map.Entry<Long, HashSet<Long>> entry : friends.entrySet() ) {
-			Long user = entry.getKey(); // Current user
-			ArrayList<Long> f_userfriends = new ArrayList<Long>(); // Filtered list of user's friends
-			
-			// Traverses all the user's friends
-			for( Long friend : entry.getValue() ) { 
-				// If the friend has posted some tweet, then add the friend to the filtered list of friends
-				ArrayList<Long> tweetsByFriend = userTweets.get(friend);
-				if ( tweetsByFriend != null && tweetsByFriend.size() > 0 )
-					f_userfriends.add(friend);
-			}
-			
-			filtered_friends.put(user, f_userfriends);
-		}
-
-		return filtered_friends;
-	}
-
-
-	/** Constructor.  */
-	public TemporaryGraph(PersistentGraph sgraph) {
-		sgraph.lockAll();
-		try {
-			tweetSet = new HashMap<Long,Long>(sgraph.getTweetSet());
-			tweetList = new ArrayList<Long>(tweetSet.keySet());
-			refTweets = new HashMap<Long,Long>(sgraph.getRefTweets());
-			userTweets = convertHashMap(sgraph.getUserTweets());
-			mentioned = convertHashMap(sgraph.getMentioned());
-			hashtagsByTweet = convertHashMap(sgraph.getHashtagsByTweet());
-			tweetsByHashtag = convertHashMap(sgraph.getTweetsByHashtag());
-			follows = convertFilteredFriends(sgraph.getFollows(), userTweets);
-		} catch (Throwable t) {
-			logger.error("Error creating a new temporary graph.", t);			
-		} finally {
-			sgraph.unlockAll();
-		}
+	public TemporaryGraph(HashMap<Long, Long> tTweetSet, HashMap<Long,Long> tRefTweets, HashMap<Long, ArrayList<Long>> tUserTweets, HashMap<Long, ArrayList<Long>> tMentioned, HashMap<Long, ArrayList<Long>> tFollows, HashMap<Long, ArrayList<String>> tHashtagsByTweet, HashMap<String, ArrayList<Long>> tTweetsByHashtag) {
+		this.tweetSet = tTweetSet;
+		this.tweetList = new ArrayList<Long>(tTweetSet.keySet());
+		this.userTweets = tUserTweets;
+		this.follows = tFollows;
+		this.mentioned = tMentioned;
+		this.hashtagsByTweet = tHashtagsByTweet;
+		this.tweetsByHashtag = tTweetsByHashtag;
+		this.refTweets = tRefTweets;
 	}
 
 	public Long getRandomTweet(Random r) {

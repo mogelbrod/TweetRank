@@ -25,10 +25,10 @@ public class TweetRanker {
 
 	private static String name = "graph";
 	private static String path = "../data/graph/";
-	private static String RankingName = "../data/tweetrank.tr";
-	//private static String RankingName = "/home/ir12/apache-solr-3.6.0/example/solr/data/external_rank";
-	private static long RankingPeriod = MinToMilli(60);  
-	private static long StoringPeriod = MinToMilli(20);
+	//private static String RankingName = "../data/tweetrank.tr";
+	private static String RankingName = "/home/ir12/apache-solr-3.6.0/example/solr/data/external_rank";
+	private static long RankingPeriod = MinToMilli(120);  
+	private static long StoringPeriod = MinToMilli(30);
 
 	private HttpServer server;
 	private Timer rankerTimer = new Timer();
@@ -60,7 +60,7 @@ public class TweetRanker {
 
 	/** Periodic TweetRank computation task. */
 	private class RankingComputationTask extends TimerTask {
-		
+
 		private void notifySolr () {
 			try {
 				URL url = new URL("http://176.9.149.66:8983/solr/reloadCache");
@@ -69,19 +69,22 @@ public class TweetRanker {
 				logger.error("Error trying to notify solr about the new TweetRank", e);
 			}
 		}
-		
+
 		@Override
 		public void run() {
 			try {
-				ranker.setTemporaryGraph(new TemporaryGraph(graph));  // Creates a new temporary graph 
-				TreeMap<Long,Double> pr = ranker.compute();           // Start computation!
-				if ( pr != null ) { // If everything was OK, save the result on a file
-					logger.info("Saving TweetRank file...");
-					PrintWriter pwriter = new PrintWriter(new FileWriter(RankingName));
-					for(Map.Entry<Long, Double> entry : pr.entrySet())
-						pwriter.println(entry.getKey() + "=" + entry.getValue());
-					pwriter.close();
-					notifySolr();
+				TemporaryGraph tg = graph.createTemporaryGraph();
+				if ( tg != null) {
+					ranker.setTemporaryGraph(tg);  // Creates a new temporary graph 
+					TreeMap<Long,Double> pr = ranker.compute();           // Start computation!
+					if ( pr != null ) { // If everything was OK, save the result on a file
+						logger.info("Saving TweetRank file...");
+						PrintWriter pwriter = new PrintWriter(new FileWriter(RankingName));
+						for(Map.Entry<Long, Double> entry : pr.entrySet())
+							pwriter.println(entry.getKey() + "=" + entry.getValue());
+						pwriter.close();
+						notifySolr();
+					}
 				}
 			} catch (TweetRankComputer.ConcurrentComputationException e) {
 				logger.info("A TweetRank computation is already ongoing.");
@@ -108,7 +111,7 @@ public class TweetRanker {
 
 	public void start() {
 		server.start();
-		rankerTimer.schedule(new RankingComputationTask(), RankingPeriod, RankingPeriod);
+		rankerTimer.schedule(new RankingComputationTask(), 1000, RankingPeriod);
 		storeTimer.schedule(new PersistentStoreTask(), StoringPeriod, StoringPeriod);
 	}
 
