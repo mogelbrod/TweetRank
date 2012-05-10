@@ -76,7 +76,7 @@ public class TweetRanker {
 		for(int ch = 0; ch < children.length; ++ch) {
 			String[] parts = children[ch].split("-");
 			if (parts.length < 2) continue;
-			if ( val == null || Integer.valueOf(parts[1]).compareTo(val) < 0 )
+			if ( val == null || Integer.valueOf(parts[1]).compareTo(val) > 0 )
 				val = Integer.valueOf(parts[1]);
 		}
 		
