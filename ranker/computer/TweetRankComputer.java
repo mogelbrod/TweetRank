@@ -13,12 +13,12 @@ import java.util.concurrent.locks.ReentrantLock;
 public class TweetRankComputer {
 	private static final Logger logger = Logger.getLogger("ranker.logger");	
 	/* TODO: adjust this parameters. */
-	private static final double VISIT_REFERENCED_TWEET_CUM = 0.30; // 30% 
-	private static final double VISIT_MENTIONED_USER_CUM   = 0.60; // 30%
-	private static final double VISIT_FOLLOWED_USER_CUM    = 0.70; // 10%
-	private static final double VISIT_USED_HASHTAG_CUM     = 0.90; // 20%
-	private static final double VISIT_RANDOM_TWEET_CUM     = 1.00; // 10%
-	private static final double BORED_PROBABILITY          = 0.15;
+	private static final double VISIT_REFERENCED_TWEET_CUM = 0.50; // 50% 
+	private static final double VISIT_MENTIONED_USER_CUM   = 0.75; // 25%
+	private static final double VISIT_FOLLOWED_USER_CUM    = 0.80; //  5%
+	private static final double VISIT_USED_HASHTAG_CUM     = 0.95; // 15%
+	private static final double VISIT_RANDOM_TWEET_CUM     = 1.00; //  5%
+	private static final double BORED_PROBABILITY          = 0.20;
 
 	private static final int NUM_WORK_THREADS = 10;
 

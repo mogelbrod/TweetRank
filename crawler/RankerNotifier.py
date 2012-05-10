@@ -11,6 +11,7 @@ class RankerNotifier:
         self.host = host
         self.port = port
         self.logger = logger
+        self.body = ''
 
     def _handleResponse(self, response):
         if response.error is not None and self.logger is not None:
@@ -19,87 +20,74 @@ class RankerNotifier:
             self.logger.debug('Request %s finished.' % response.request.body)
         IOLoop.instance().stop()
 
-    def _sendRequest(self, request):
+    def _sendRequest(self):
+        request = HTTPRequest('http://%s:%d/'%(self.host, self.port),method='POST',body=self.body)
         self.http_client.fetch(request, self._handleResponse)
         IOLoop.instance().start()
+        self.body = ''
 
     def add_retweet(self, tweet_id, retweeted_id):
         """This method tells the ranker that `tweet_id' is a retweet of `retweeted_id'"""
-        body = "TYPE=RT&ID=%d&RefID=%d\n" % (tweet_id, retweeted_id)
-        request = HTTPRequest('http://%s:%d/'%(self.host, self.port),method='POST',body=body)
-        return self._sendRequest(request)
+        self.body += "TYPE=RT&ID=%d&RefID=%d\n" % (tweet_id, retweeted_id)
 
     def add_reply(self, tweet_id, replied_id):
         """This method tells the ranker that `tweet_id' is a reply to `replied_id'"""
-        body = "TYPE=RP&ID=%d&RefID=%d\n" % (tweet_id, replied_id)
-        request = HTTPRequest('http://%s:%d/'%(self.host, self.port),method='POST',body=body)
-        return self._sendRequest(request)
+        self.body += "TYPE=RP&ID=%d&RefID=%d\n" % (tweet_id, replied_id)
 
     def add_mentions(self, tweet_id, mentioned_user_ids):
         """This method tells the ranker that `tweet_id' mentioned users in `mentioned_user_ids'"""
-        if len(mentioned_user_ids) == 0:
-            return 200
+        if len(mentioned_user_ids) == 0: return
 
-        body = 'TYPE=MN&ID=%d' % tweet_id
+        self.body += 'TYPE=MN&ID=%d' % tweet_id
         for uid in mentioned_user_ids:
-            body = body + ('&RefID=%d' % uid)
-        body = body + '\n'
-        request = HTTPRequest('http://%s:%d/'%(self.host, self.port),method='POST',body=body)
-        return self._sendRequest(request)
+            self.body += '&RefID=%d' % uid
+        self.body += '\n'
 
     def add_user_friends(self, user_id, friend_ids):
         """This method tells the ranker that `user_id' is following users in `followed_user_ids'"""
-        if friend_ids is None or len(friend_ids) == 0:
-            return 200
+        if friend_ids is None or len(friend_ids) == 0: return
 
-        body = 'TYPE=FW&ID=%d' % user_id
+        self.body += 'TYPE=FW&ID=%d' % user_id
         for uid in friend_ids:
-            body = body + ('&RefID=%d' % uid)
-        body = body + '\n'
-        request = HTTPRequest('http://%s:%d/'%(self.host, self.port),method='POST',body=body)
-        return self._sendRequest(request)
+            self.body += '&RefID=%d' % uid
+        self.body += '\n'
+        self._sendRequest()
 
     def add_user_tweets(self, user_id, tweet_ids):
         """This method tells the ranker that `user_id' is the author of tweets in `tweet_ids'"""
-        if tweet_ids is None or len(tweet_ids) == 0:
-            return 200
+        if tweet_ids is None or len(tweet_ids) == 0: return
 
-        body = 'TYPE=TW&ID=%d' % user_id
+        self.body += 'TYPE=TW&ID=%d' % user_id
         for tid in tweet_ids:
-            body = body + ('&RefID=%d' % tid)
-        body = body + '\n'
-        request = HTTPRequest('http://%s:%d/'%(self.host, self.port),method='POST',body=body)
-        return self._sendRequest(request)
+            self.body += '&RefID=%d' % tid
+        self.body += '\n'
 
     def add_tweet_hashtags(self, tweet_id, hashtags):
         """This method tells the ranker that `tweet_id' contained the hashtags in `hashtags'"""
-        if hashtags is None or len(hashtags) == 0:
-            return 200
+        if hashtags is None or len(hashtags) == 0: return
 
-        body = 'TYPE=HT&ID=%d' % tweet_id
+        self.body += 'TYPE=HT&ID=%d' % tweet_id
         for ht in hashtags:
-            body = body + ('&RefID=%s' % ht)
-        body = body + '\n'
-        request = HTTPRequest('http://%s:%d/'%(self.host, self.port),method='POST',body=body)
-        return self._sendRequest(request)
-
+            self.body += '&RefID=%s' % ht
+        self.body += '\n'
 
     def notify_tweet(self, tweet):
-        if tweet.retweeted_status is not None:
-            self.add_retweet(tweet.id, tweet.retweeted_status.id)
-
-        if tweet.replied_id is not None:
-            self.add_reply(tweet.id, tweet.replied_id)
-
-        if len(tweet.mentions) > 0:
-            self.add_mentions(tweet.id, tweet.mentions)
-
-        if len(tweet.hashtags) > 0:
-            self.add_tweet_hashtags(tweet.id, tweet.hashtags)
-
-        self.add_user_tweets(tweet.user.id, [tweet.id])
-
+        self.notify_tweets([tweet])
 
     def notify_tweets(self, tweets):
         for tweet in tweets:
-            self.notify_tweet(tweet)
+            if tweet.retweeted_status is not None:
+                self.add_retweet(tweet.id, tweet.retweeted_status.id)
+
+            if tweet.replied_id is not None:
+                self.add_reply(tweet.id, tweet.replied_id)
+
+            if len(tweet.mentions) > 0:
+                self.add_mentions(tweet.id, tweet.mentions)
+
+            if len(tweet.hashtags) > 0:
+                self.add_tweet_hashtags(tweet.id, tweet.hashtags)
+
+            self.add_user_tweets(tweet.user.id, [tweet.id])
+
+        self._sendRequest()

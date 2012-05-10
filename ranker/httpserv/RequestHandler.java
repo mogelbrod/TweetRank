@@ -3,8 +3,9 @@ package httpserv;
 import graph.PersistentGraph;
 
 import java.io.BufferedReader;
-import java.io.InputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -21,7 +22,7 @@ import computer.TweetRankComputer;
 
 public class RequestHandler implements HttpHandler {
 	private static final Logger logger = Logger.getLogger("ranker.logger");
-	
+
 	/** This method parses the body of a POST request and extracts the parameters. */
 	public enum Type {
 		// /RT (Retweet relationship) -> Tweet 'ID' is a retweet of tweet 'RefID'
@@ -62,7 +63,23 @@ public class RequestHandler implements HttpHandler {
 		this.trcomputer = trcomputer;
 	}
 
-	private static HashMap<String,ArrayList<String>> parseParams(InputStream is) throws Exception {
+	private static HashMap<String,ArrayList<String>> parseParams(String body_line) throws Exception {
+		HashMap<String,ArrayList<String>> params = new HashMap<String,ArrayList<String>>();
+		String[] parts = body_line.split("&");
+		for(int i = 0; i < parts.length; ++i) {
+			String[] parameter = parts[i].split("=");
+			if (parameter.length != 2 || parameter[0].length() == 0 || parameter[1].length() == 0)
+				throw new Exception("Bad parameter for key '" + parameter[0] + "'.");
+			parameter[0] = parameter[0].toUpperCase();
+			ArrayList<String> values = params.get(parameter[0]);
+			if ( values == null ) values = new ArrayList<String>();
+			values.add(parameter[1]);
+			params.put(parameter[0], values);
+		}
+		return params;
+	}
+
+	/*private static HashMap<String,ArrayList<String>> parseParams(InputStream is) throws Exception {
 		HashMap<String,ArrayList<String>> params = new HashMap<String,ArrayList<String>>(); 
 		InputStreamReader isr = new InputStreamReader(is, "UTF-8");
 		BufferedReader br = new BufferedReader(isr);
@@ -82,7 +99,7 @@ public class RequestHandler implements HttpHandler {
 			}
 		}
 		return params;
-	}
+	}*/
 
 	/** This method is used to send a Bad Reponse to the client. */
 	private static void sendBadRequestResponse(HttpResponse response, String message) {
@@ -97,9 +114,9 @@ public class RequestHandler implements HttpHandler {
 			logger.error(RequestHandler.class.toString() + ": Error sending response.", e);
 		}
 	}
-	
+
 	private static void sendServerErrorResponse(HttpResponse response, String message) {
-		
+
 	}
 
 	/** This method is used to send a OK to the client. */
@@ -114,7 +131,25 @@ public class RequestHandler implements HttpHandler {
 			logger.error(RequestHandler.class.toString() + ": Error sending response.", e);
 		}
 	}
-	
+
+	private static class LineMessage {
+		public Long line;
+		public String message;
+		public LineMessage(Long line, String message) {
+			this.line = line;
+			this.message = message;
+		}
+	}
+
+	private static ArrayList<Long> convertStringToLongList(ArrayList<String> strList) throws Exception {
+		ArrayList<Long> longList = new ArrayList<Long>(strList.size());
+		for (String str : strList) {
+			try { longList.add(Long.valueOf(str)); } 
+			catch (Exception e) { throw new Exception("Failed to parse a REFID '" + str + "' as long."); }
+		}
+		return longList;
+	}
+
 	private void handleData(HttpContext context) {
 		// Check POST request
 		if ( !context.getRequest().getMethod().toUpperCase().equals("POST") ) {
@@ -122,92 +157,116 @@ public class RequestHandler implements HttpHandler {
 			return;
 		}
 
-		// Get action parameters
-		HashMap<String, ArrayList<String>> params = null;
+		InputStreamReader isr;
 		try {
-			params = parseParams(context.getRequest().getBody());
-		} catch (Exception e) {
+			isr = new InputStreamReader(context.getRequest().getBody(), "UTF-8");
+		} catch (UnsupportedEncodingException e) {
 			sendBadRequestResponse(context.getResponse(), e.getMessage());
 			return;
 		}
 
-		String typeStr = params.get("TYPE").get(0).toUpperCase();
-		String idStr = params.get("ID").get(0);
-
-		Type type = null;
+		BufferedReader br = new BufferedReader(isr);
+		ArrayList<LineMessage> exceptions = new ArrayList<LineMessage>(); 
+		long line = 0;
+		String body_line;
 		try {
-			type = Type.find(typeStr);
-			if (type == null) {
-				throw new Exception();
-			}
-		} catch (Exception e) {
-			sendBadRequestResponse(context.getResponse(), "Invalid type '" + typeStr + "'.");
-			return;
-		}
-		// Check the 'ID' parameter.
+			// Process each line in the body... (Each line can contain a different request)
+			while ( (body_line = br.readLine()) != null ) {
+				line++; // New Line
 
-		if ( idStr == null || params.get("ID").size() != 1) {
-			sendBadRequestResponse(context.getResponse(), "An unique 'ID' parameter is mandatory.");
-			return;
-		}
-
-		Long id = null;
-		try {
-			id  = Long.valueOf(idStr);
-		} catch (Exception e) {
-			sendBadRequestResponse(context.getResponse(), "Unable to parse id '" + idStr + "' as long.");
-			return;
-		}
-
-
-		ArrayList<String> refIDs = params.get("REFID");
-
-		// Check the 'RefID' parameter.
-		if ( refIDs == null || refIDs.size() == 0 ) {
-			sendBadRequestResponse(context.getResponse(), "At least one 'REFID' parameter must be indicated.");
-			return;
-		}
-
-		ArrayList<Long> refLongIDs = new ArrayList<Long>(refIDs.size());
-		if (type != Type.HASHTAG) {
-			for (String refID : refIDs) {
+				// Get action parameters
+				HashMap<String, ArrayList<String>> params = null;
 				try {
-					refLongIDs.add(Long.valueOf(refID));
+					params = parseParams(body_line);
 				} catch (Exception e) {
-					sendBadRequestResponse(context.getResponse(), "Failed to parse a refID '" + refID + "' as long.");
-					return;
+					exceptions.add(new LineMessage(line, e.getMessage()));
+					continue;
+				}
+
+				String typeStr = params.get("TYPE").get(0).toUpperCase();
+				String idStr = params.get("ID").get(0);
+
+				// Check the 'TYPE' parameter.
+				Type type = null;
+				type = Type.find(typeStr);
+				if (type == null) {
+					exceptions.add(new LineMessage(line, "Invalid TYPE '" + typeStr + "'."));
+					continue;
+				}
+
+				// Check the 'ID' parameter.
+				if ( idStr == null || params.get("ID").size() != 1) {
+					exceptions.add(new LineMessage(line, "An unique ID parameter is mandatory."));
+					continue;
+				}
+
+				// Parse 'ID' as Long
+				Long id = null;
+				try {
+					id  = Long.valueOf(idStr);
+				} catch (Exception e) {
+					exceptions.add(new LineMessage(line, "Unable to parse ID '" + idStr + "' as long."));
+					continue;
+				}
+
+				// Check the 'RefID' parameter.
+				ArrayList<String> refIDs = params.get("REFID");
+				if ( refIDs == null || refIDs.size() == 0 ) {
+					exceptions.add(new LineMessage(line, "At least one 'REFID' parameter must be indicated."));
+					continue;
+				}
+
+				// Parse 'RefID' as Long
+				ArrayList<Long> refLongIDs = null;
+				if (type != Type.HASHTAG) {
+					try {
+						refLongIDs = convertStringToLongList(refIDs);
+					} catch (Exception e) {
+						exceptions.add(new LineMessage(line, e.getMessage()));
+						continue;
+					}
+				}
+
+				try {
+					if (type == Type.RETWEET || type == Type.REPLY) {
+						if (refLongIDs.size() != 1) {
+							exceptions.add(new LineMessage(line, "For RT and RP only one REFID is allowed. Size: " + refLongIDs.size()));
+							continue;
+						}
+						logger.debug("ADD " + type + ": "+ id + " " + refLongIDs.get(0));
+						graph.addRefTweets(id, refLongIDs.get(0));
+					} else if (type == Type.FOLLOWING) {
+						logger.debug("ADD " + type + ": "+ id + " " + refLongIDs);
+						graph.addFollows(id, refLongIDs);
+					} else if (type == Type.MENTION) {
+						logger.debug("ADD " + type + ": "+ id + " " + refLongIDs);
+						graph.addMentioned(id, refLongIDs);
+					} else if (type == Type.TWEETS) {
+						logger.debug("ADD " + type + ": "+ id + " " + refLongIDs);
+						graph.addUserTweets(id, refLongIDs);
+					} else if (type == Type.HASHTAG) {
+						logger.debug("ADD " + type + ": "+ id + " " + refIDs);
+						graph.addHashtags(id, refIDs);
+					} else {
+						exceptions.add(new LineMessage(line, "Unknown type: " + type.toString()));
+						continue;
+					}
+				} catch (Exception e) {
+					exceptions.add(new LineMessage(line, "Internal error handling request."));	
 				}
 			}
+		} catch (IOException e) {
+			sendBadRequestResponse(context.getResponse(), e.getMessage());
 		}
 
-		if (type == Type.RETWEET || type == Type.REPLY) {
-			if (refLongIDs.size() != 1) {
-				sendBadRequestResponse(context.getResponse(), "For RT and RP only one refID is allowed. Size: " + refLongIDs.size());
-				return;
-			}
-			logger.debug(RequestHandler.class.toString() + ": " + type + ": "+ id + " " + refLongIDs.get(0));
-			graph.addRefTweets(id, refLongIDs.get(0));
-		} else if (type == Type.FOLLOWING) {
-			logger.debug(RequestHandler.class.toString() + ": " + type + ": "+ id + " " + refLongIDs);
-			graph.addFollows(id, refLongIDs);
-		} else if (type == Type.MENTION) {
-			logger.debug(RequestHandler.class.toString() + ": " + type + ": "+ id + " " + refLongIDs);
-			graph.addMentioned(id, refLongIDs);
-		} else if (type == Type.TWEETS) {
-			logger.debug(RequestHandler.class.toString() + ": " + type + ": "+ id + " " + refLongIDs);
-			graph.addUserTweets(id, refLongIDs);
-		} else if (type == Type.HASHTAG) {
-			logger.debug(RequestHandler.class.toString() + ": " + type + ": "+ id + " " + refIDs);
-			graph.addHashtags(id, refIDs);
-		} else {
-			sendBadRequestResponse(context.getResponse(), "Unknown type: " + type.toString());
-			return;
-		}
-
-		// Send OK response.
-		sendOKResponse(context.getResponse(), "OK!");		
+		if ( exceptions.size() > 0 ) {
+			String errorMessages = "";
+			for(LineMessage lm : exceptions)
+				errorMessages += "Error processing line " + lm.line + ": " + lm.message;
+			sendBadRequestResponse(context.getResponse(), errorMessages); // Send Bad response.
+		} else sendOKResponse(context.getResponse(), "OK!"); // Send OK response.		
 	}
-	
+
 	private void handleStatus(HttpContext context) {
 		try {
 			String response = "Persistent graph info:\n======================\n" +
