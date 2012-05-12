@@ -59,19 +59,19 @@ public class TweetRanker {
 			this.graph.store(path, name, version);
 		}		
 	}
-	
+
 	private static int graphVersion() {
 		File dir = new File(path);
-		
+
 		FilenameFilter filter = new FilenameFilter() {
-		    public boolean accept(File dir, String fname) {
-		    	return fname.startsWith(name + "__");
-		    }
+			public boolean accept(File dir, String fname) {
+				return fname.startsWith(name + "__");
+			}
 		};
 
 		String[] children = dir.list(filter);
 		if ( children == null ) return 0;
-				
+
 		Integer val = null;
 		for(int ch = 0; ch < children.length; ++ch) {
 			String[] parts = children[ch].split("-");
@@ -79,7 +79,7 @@ public class TweetRanker {
 			if ( val == null || Integer.valueOf(parts[1]).compareTo(val) > 0 )
 				val = Integer.valueOf(parts[1]);
 		}
-		
+
 		if ( val == null ) return 0;
 		else return val;
 	}
@@ -99,17 +99,17 @@ public class TweetRanker {
 		@Override
 		public void run() {
 			try {
-				Integer version = graphVersion();
-				if (version > 0) {
-				TreeMap<Long,Double> pr = ranker.compute(path, name, version);           // Start computation!
-				if ( pr != null ) { // If everything was OK, save the result on a file
+				// Start computation!
+				TreeMap<Long,Double> pr = ranker.compute(graph.createTemporaryGraph());
+				
+				// If everything was OK, save the result on a file
+				if ( pr != null ) { 
 					logger.info("Saving TweetRank file...");
 					PrintWriter pwriter = new PrintWriter(new FileWriter(RankingName));
 					for(Map.Entry<Long, Double> entry : pr.entrySet())
 						pwriter.println(entry.getKey() + "=" + entry.getValue());
 					pwriter.close();
 					notifySolr();
-				}
 				}
 			} catch (TweetRankComputer.ConcurrentComputationException e) {
 				logger.info("A TweetRank computation is already ongoing.");

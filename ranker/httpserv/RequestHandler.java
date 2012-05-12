@@ -277,7 +277,12 @@ public class RequestHandler implements HttpHandler {
 			} else {
 				response += "Temporary graph not initialized.\n\n";
 			}
+			
 			response += "Last computation: " + (enddate == null ? "Never" : Time.formatDate("yyyy/MM/dd HH:mm:ss", enddate)) + "\n";
+			if ( state == TweetRankComputer.State.WORKING ) {
+				response += "Approximate percentage of completion: " + trcomputer.getExpectedPercentageOfCompletion()*100 + "\n" +
+				"Approximate remaining time: " + trcomputer.getExpectedRemainingTime() + "\n";
+			}
 			if ( elapsed != null )	response += "Elapsed time: " + elapsed;
 
 

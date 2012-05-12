@@ -13,12 +13,12 @@ import java.util.concurrent.locks.ReentrantLock;
 public class TweetRankComputer {
 	private static final Logger logger = Logger.getLogger("ranker.logger");	
 	/* TODO: adjust this parameters. */
-	private static final double VISIT_REFERENCED_TWEET_CUM = 0.50; // 50% 
-	private static final double VISIT_MENTIONED_USER_CUM   = 0.75; // 25%
-	private static final double VISIT_FOLLOWED_USER_CUM    = 0.80; //  5%
-	private static final double VISIT_USED_HASHTAG_CUM     = 1.00; // 20%
-	private static final double BORED_PROBABILITY          = 0.20;
-	
+	private static final double VISIT_REFERENCED_TWEET_CUM = 0.40; // 40% 
+	private static final double VISIT_MENTIONED_USER_CUM   = 0.60; // 20%
+	private static final double VISIT_FOLLOWED_USER_CUM    = 0.64; //  4%
+	private static final double VISIT_USED_HASHTAG_CUM     = 0.80; // 16%
+	private static final double BORED_PROBABILITY_CUM      = 1.00; // 20%
+
 	private static final int NUM_WORK_THREADS = 16;
 	ComputerThread[] workerThreads = new ComputerThread[NUM_WORK_THREADS];	
 
@@ -54,7 +54,8 @@ public class TweetRankComputer {
 
 	private class ComputerThread extends Thread {
 		private int tidx;
-		private HashMap<Long,Long> counter = new HashMap<Long, Long> ();
+		private HashMap<Long,Long> counter;
+		private long total_counter;
 		private Random rseed = new Random();
 
 		public ComputerThread(int tidx) {
@@ -71,6 +72,7 @@ public class TweetRankComputer {
 			Long c = counter.get(tweetID);
 			if ( c == null ) counter.put(tweetID, 1L);
 			else counter.put(tweetID, c+1);
+			total_counter++;
 		}
 
 		/** 
@@ -125,11 +127,15 @@ public class TweetRankComputer {
 
 		@Override
 		public void run() {
+			counter = new HashMap<Long, Long> ();
+			total_counter = 0;
+			
 			List<Long> tweets = graph.getTweetList();
 			for(int idx = tidx; idx < tweets.size(); idx += NUM_WORK_THREADS) {
 				for(int i = 1; i <= M; ++i) {
 					Long currentID = tweets.get(idx);
 
+					boolean stop_walk = false;
 					do {
 						double random = rseed.nextDouble();
 						addVisit(currentID);
@@ -163,21 +169,25 @@ public class TweetRankComputer {
 							else random = VISIT_USED_HASHTAG_CUM + rseed.nextDouble()*(1-VISIT_USED_HASHTAG_CUM);
 						}
 
-						
-						/* We reached a daggling node. Then, jump to a random tweet. */
-						if ( nextID == null ) {
+						/* We reached a dangling node. Then, jump to a random tweet, and stop the current random walk. */
+						if ( nextID == null && random <= BORED_PROBABILITY_CUM ) {
 							nextID = graph.getRandomTweet(rseed);
 							logger.debug("JUMP: RND " + currentID.toString() + "->" + nextID.toString());
+							stop_walk = true;
 						}
 
 						currentID = nextID;
-					} while( rseed.nextDouble() > BORED_PROBABILITY );
+					} while ( !stop_walk );
 				}
 			}
 		}
 
 		public HashMap<Long,Long> getCounter() {
 			return counter;
+		}
+
+		public long getTotalCounter() {
+			return total_counter;
 		}
 	}
 
@@ -189,22 +199,35 @@ public class TweetRankComputer {
 	 * @throws ConcurrentComputationException is thrown if there is a concurrent computation.
 	 * @throws NullTemporaryGraphException if the graph was not initialized.
 	 */
-	public TreeMap<Long,Double> compute(String path, String name, Integer version) throws ConcurrentComputationException, NullTemporaryGraphException {
-		cLock.lock();
+	public TreeMap<Long,Double> compute(TemporaryGraph graph) 
+	throws ConcurrentComputationException, NullTemporaryGraphException 
+	{
 		TreeMap<Long,Double> tweetrank = null;
-		try {
-			graph = new TemporaryGraph(path, name, version);
-			if ( graph != null ) {
-				// Determine the path length to be used
-				M = graph.getNumberOfTweets()/100;
-				if (M < 100) M = 100;
 
-				// Start computation!
-				tweetrank = MCCompletePath();
-			}
+		// Check if there is another thread already computing the tweetrank
+		if ( !cLock.tryLock() ) 
+			throw new ConcurrentComputationException();
+
+		// Check if the graph is null
+		if ( graph == null ) {
+			cLock.unlock();
+			throw new NullTemporaryGraphException();
+		}
+			
+		try {
+			// Set the temporary graph
+			this.graph = graph;
+			
+			// Determine the path length to be used
+			M = graph.getNumberOfTweets()/100;
+			if (M < 100) M = 100;
+
+			// Start computation!
+			tweetrank = MCCompletePathStopDanglingNodes();
 		} finally {
 			cLock.unlock();
 		}
+
 		return tweetrank;
 	}	
 
@@ -214,9 +237,9 @@ public class TweetRankComputer {
 	 * @return A HashMap where each entry is a pair (TweetID, TweetRank). If any problem
 	 * ocurred, the result is null.
 	 */
-	private TreeMap<Long,Double> MCCompletePath() {	
+	private TreeMap<Long,Double> MCCompletePathStopDanglingNodes() {	
 		logger.info("Ranking started at " + Time.formatDate("yyyy/MM/dd HH:mm:ss", new Date()));
-		
+
 		// Work started...
 		state = State.WORKING;
 		StartEndDate[0] = new Date();		
@@ -284,12 +307,12 @@ public class TweetRankComputer {
 			}
 		}
 
-		
+
 		logger.debug("min=" + min.toString() + ", max=" + max.toString() + ", minRange=" + MinRange.toString() + ", maxRange=" + MaxRange.toString());
-		
+
 		// Normalize the counters
 		TreeMap<Long,Double> norm = new TreeMap<Long,Double>();
-		
+
 		// Check if max and min are equal
 		if ( !max.equals(min) ) {
 			for(Entry<Long,Long> entry : merge.entrySet()) {
@@ -352,4 +375,45 @@ public class TweetRankComputer {
 	public Date getEndDate() {
 		return StartEndDate[1];
 	}
+	
+	/**
+	 * Returns the percentage of completion of the TweetRank computation.
+	 * WARNING: NOT THREAD-SAFE! 
+	 * @return If the computation is active, returns the percentage of completion of the TweetRank computation.
+	 * Otherwise returns 0.
+	 */
+	public double getExpectedPercentageOfCompletion() {
+		if ( state == State.IDLE ) return 0.0;
+		
+		double bored_prob = BORED_PROBABILITY_CUM - VISIT_USED_HASHTAG_CUM;
+		double expected_length = 1/bored_prob; // Expected length
+		double dev_length = Math.sqrt(3.0)/6.0;// Standard deviation in the length
+
+		double ExpectedVisits = graph.getNumberOfTweets()*M*expected_length;
+		long CurrentVisits = 0L;
+
+		for(int widx = 0; widx < NUM_WORK_THREADS; ++widx)
+			CurrentVisits += workerThreads[widx].getTotalCounter();
+		
+		while(CurrentVisits > ExpectedVisits)
+			ExpectedVisits += dev_length;
+		
+		return CurrentVisits/ExpectedVisits;
+	}
+	
+	/**
+	 * Returns the expected remaining time for the completion of the ongoing
+	 * TweetRank computation (or zero, if state is IDLE).
+	 * WARNING: NOT THREAD-SAFE! 
+	 * @return Expected remaining time.
+	 */
+	public Time getExpectedRemainingTime() {
+		if ( state == State.IDLE ) return new Time(0);
+
+		double completed = getExpectedPercentageOfCompletion();
+		if (completed < 1E-5) return new Time();
+
+		long elapsed = (new Date()).getTime() - StartEndDate[0].getTime();
+		return new Time((long)(elapsed/completed) - elapsed);
+	}	
 }
