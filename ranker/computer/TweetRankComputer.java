@@ -16,8 +16,7 @@ public class TweetRankComputer {
 	private static final double VISIT_REFERENCED_TWEET_CUM = 0.50; // 50% 
 	private static final double VISIT_MENTIONED_USER_CUM   = 0.75; // 25%
 	private static final double VISIT_FOLLOWED_USER_CUM    = 0.80; //  5%
-	private static final double VISIT_USED_HASHTAG_CUM     = 0.95; // 15%
-	private static final double VISIT_RANDOM_TWEET_CUM     = 1.00; //  5%
+	private static final double VISIT_USED_HASHTAG_CUM     = 1.00; // 20%
 	private static final double BORED_PROBABILITY          = 0.20;
 	
 	private static final int NUM_WORK_THREADS = 16;
@@ -82,8 +81,8 @@ public class TweetRankComputer {
 		private Long jumpUserTweet(Long TweetID, ArrayList<Long> usersList, long type) {
 			// If there are no related users, then jump to a random tweet.
 			if (usersList == null || usersList.size() == 0) {
-				if (type == 0) logger.debug("EMPTY_UL (FW): Owner of tweet " + TweetID + " has no friends.");
-				else logger.debug("EMPTY_UL (MN): Tweet " + TweetID + "has no mentions.");
+				if (type == 0) logger.debug("EMPTY_UL (FW): Owner of tweet " + TweetID.toString() + " has no friends.");
+				else logger.debug("EMPTY_UL (MN): Tweet " + TweetID.toString() + "has no mentions.");
 				return null;
 			}
 
@@ -92,7 +91,7 @@ public class TweetRankComputer {
 
 			// If the related user does not have tweets, we jump to a random tweet.
 			if (tweetsOfUser == null || tweetsOfUser.size() == 0) {
-				logger.debug("SILENT_USER: User " + randomUser + " has no tweets.");
+				logger.debug("SILENT_USER: User " + randomUser.toString() + " has no tweets.");
 				return null;
 			}
 
@@ -106,7 +105,7 @@ public class TweetRankComputer {
 		 */
 		private Long jumpHashtagTweet(Long TweetID, ArrayList<String> tweetHashtags) {
 			if (tweetHashtags == null || tweetHashtags.size() == 0) {
-				logger.debug("EMPTY_HT: Tweet " + TweetID + " has no hashtags.");
+				logger.debug("EMPTY_HT: Tweet " + TweetID.toString() + " has no hashtags.");
 				return null;
 			}
 
@@ -138,13 +137,13 @@ public class TweetRankComputer {
 
 						if ( nextID == null && random <= VISIT_REFERENCED_TWEET_CUM ) {
 							nextID = jumpReferenceTweet(currentID);
-							if (nextID != null) logger.debug("JUMP: REF " + currentID + "->" + nextID);
+							if (nextID != null) logger.debug("JUMP: REF " + currentID.toString() + "->" + nextID.toString());
 							else random = VISIT_REFERENCED_TWEET_CUM + rseed.nextDouble()*(1-VISIT_REFERENCED_TWEET_CUM);
 						}
 
 						if ( nextID == null && random <= VISIT_MENTIONED_USER_CUM ) {					
 							nextID = jumpUserTweet(currentID, graph.getMentionedUsers(currentID), 1);
-							if (nextID != null) logger.debug("JUMP: MN " + currentID + "->" + nextID);
+							if (nextID != null) logger.debug("JUMP: MN " + currentID.toString() + "->" + nextID.toString());
 							else random = VISIT_MENTIONED_USER_CUM + rseed.nextDouble()*(1-VISIT_MENTIONED_USER_CUM);
 						}
 
@@ -152,21 +151,23 @@ public class TweetRankComputer {
 							Long ownerID = graph.getTweetOwner(currentID);
 							if ( ownerID != null) {
 								nextID = jumpUserTweet(currentID, graph.getFollowingUsers(ownerID), 0);
-								if (nextID != null)	logger.debug("JUMP: FW " + currentID + "->" + nextID);
+								if (nextID != null)	logger.debug("JUMP: FW " + currentID.toString() + "->" + nextID.toString());
 								else random = VISIT_FOLLOWED_USER_CUM + rseed.nextDouble()*(1-VISIT_FOLLOWED_USER_CUM);
 							} 
-							else logger.debug("UKN_USER: Unknown user owner of tweet " + currentID);
+							else logger.debug("UKN_USER: Unknown user owner of tweet " + currentID.toString());
 						}
 
 						if ( nextID == null && random <= VISIT_USED_HASHTAG_CUM ) {
 							nextID = jumpHashtagTweet(currentID, graph.getHashtagsByTweet(currentID));
-							if (nextID != null) logger.debug("JUMP: HT " + currentID + "->" + nextID);
+							if (nextID != null) logger.debug("JUMP: HT " + currentID.toString() + "->" + nextID.toString());
 							else random = VISIT_USED_HASHTAG_CUM + rseed.nextDouble()*(1-VISIT_USED_HASHTAG_CUM);
 						}
 
-						if ( nextID == null && random <= VISIT_RANDOM_TWEET_CUM ) {
+						
+						/* We reached a daggling node. Then, jump to a random tweet. */
+						if ( nextID == null ) {
 							nextID = graph.getRandomTweet(rseed);
-							logger.debug("JUMP: RND " + currentID + "->" + nextID);
+							logger.debug("JUMP: RND " + currentID.toString() + "->" + nextID.toString());
 						}
 
 						currentID = nextID;
@@ -283,16 +284,27 @@ public class TweetRankComputer {
 			}
 		}
 
-		// check if max and min are equal
-		logger.debug("min=" + min + ", max=" + max + ", minRange=" + MinRange + ", maxRange=" + MaxRange);
-
+		
+		logger.debug("min=" + min.toString() + ", max=" + max.toString() + ", minRange=" + MinRange.toString() + ", maxRange=" + MaxRange.toString());
+		
 		// Normalize the counters
 		TreeMap<Long,Double> norm = new TreeMap<Long,Double>();
-		for(Entry<Long,Long> entry : merge.entrySet()) {
-			Double val = MinRange + (MaxRange - MinRange)*(entry.getValue() - min)/(double)(max - min);
-			logger.debug("id="+entry.getKey()+", oval=" + entry.getValue() + ", nval=" + val);
-			norm.put(entry.getKey(),  val);
+		
+		// Check if max and min are equal
+		if ( !max.equals(min) ) {
+			for(Entry<Long,Long> entry : merge.entrySet()) {
+				Double val = MinRange + (MaxRange - MinRange)*(entry.getValue() - min)/(double)(max - min);
+				logger.debug("id="+entry.getKey()+", oval=" + entry.getValue() + ", nval=" + val);
+				norm.put(entry.getKey(),  val);
+			}			
+		} else {
+			for(Entry<Long,Long> entry : merge.entrySet()) {
+				Double val = MinRange + (MaxRange - MinRange)/2.0;
+				logger.debug("id="+entry.getKey()+", oval=" + entry.getValue() + ", nval=" + val);
+				norm.put(entry.getKey(), val);
+			}
 		}
+
 		return norm;
 	}
 
