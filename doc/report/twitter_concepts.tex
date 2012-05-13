@@ -1,0 +1,47 @@
+\section{Twitter concepts}
+Twitter\footnote{\url{http://www.twitter.com}} is a social network that allows users to send and read short messages called \emph{tweets}. There are many ways of interaction in Twitter: users can \emph{follow} other users and are notified about the posts from these \emph{followed} users, users can \emph{mention} other users on their tweets, they can re-post a tweet from an other user (\emph{retweet}) or they can \emph{reply} to a certain tweet. Additionally, a tweet can mention several \emph{hashtags}, which are usually used to designate the topic that the tweet is talking about (for instance: \emph{\#politics}, \emph{\#Twitter} or \emph{\#ChampionsLeague}). Given that concepts\footnote{\url{http://support.twitter.com/entries/13920-frequently-asked-questions}}, we define the following matrices representing the different relationships. \\
+
+The matrix $RT$ describes the \emph{retweet} relationship among different tweets. 
+\begin{equation}\label{eq:retweet_rel}
+RT_{i,j} = \begin{cases}
+1 & \text{if tweet } i \text{ retweets } j \\
+0 & \text{otherwise}
+\end{cases}
+\end{equation}
+
+Notice that $RT$ is a $|T| \times |T|$ matrix ($T$ is the set of tweets), where each row has at most one non-zero element (since a tweet $i$ can only retweet a single tweet $j$) and the relationship is asymmetric (if a tweet $i$ retweets $j$, then $j$ does not retweet $i$). \\
+
+The matrix $RP$ describes the \emph{reply} relationship among different tweets, with the same properties of $RT$.
+\begin{equation}\label{eq:reply_rel}
+RP_{i,j} = \begin{cases}
+1 & \text{if tweet } i \text{ replies } j \\
+0 & \text{otherwise}
+\end{cases}
+\end{equation}
+
+The matrix $MN$ describes the \emph{mention} relationship among tweets and users. $MN$ is a $|T| \times |U|$, where $U$ is the set of users. 
+\begin{equation}\label{eq:mention_rel}
+MN_{i,j} = \begin{cases}
+1 & \text{if tweet } i \text{ mentions user } j \\
+0 & \text{otherwise}
+\end{cases}
+\end{equation}
+Notice that $m_i = \sum_{j \in U} MN_{i,j}$ is the number of mentions in the tweet $i$. \\
+
+The matrix $FW$ describes the \emph{following} relationship among users. $FW$ is a $|U| \times |U|$ matrix.
+\begin{equation}\label{eq:following_rel}
+FW_{i,j} = \begin{cases}
+1 & \text{if user } i \text{ follows user } j \\
+0 & \text{otherwise}
+\end{cases}
+\end{equation}
+Notice that $f_i = \sum_{j \in U} FW_{i,j}$ is the number of users followed (\emph{friends}) by user $i$. \\
+
+The matrix $HT$ describes the relationship among tweets and hashtags. $FW$ is a $|T| \times |HS|$ matrix, where $HS$ is the set of hashtags.
+\begin{equation}\label{eq:hashtags_rel}
+HT_{i,j} = \begin{cases}
+1 & \text{if tweet } i \text{ includes hashtag } j \\
+0 & \text{otherwise}
+\end{cases}
+\end{equation}
+Notice that $th_i = \sum_{j \in HS} HT_{i,j}$ is the number of hashtags included in tweet $i$ (row sum). Similarly, $ht_j = \sum_{i \in |T|} HT_{i,j}$ is the number of tweets that used the hashtag $j$ (column sum).

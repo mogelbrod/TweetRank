@@ -1,0 +1,44 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+%\usepackage{ucs}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{parskip}
+\usepackage{fullpage}
+\usepackage{url}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subfigure}
+
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+
+\author{V. Hallberg, A. Hjalmarsson, J. Puigcerver, \\C. Rydberg and J. Stjernberg\\
+\footnotesize{\{victorha,alehja,joanpip,chrryd,stjer\}@kth.se}}
+\title{TweetRank: An adaptation of PageRank algorithm to Twitter world}
+
+\begin{document}
+\maketitle
+\noindent
+\begin{abstract}
+PageRank is an algorithm presented by Larry Page and Sergey Brin that allows to estimate the importance of a web page using the hyperlinks among them. This algorithm was originally the core of Google's search engine and proved to work very well in the web structure. Our task was to adapt the PageRank to work in the world of Twitter, instead of the web. This document presents the mathematical basis to compute, what we called, the \emph{TweetRank}, an algorithm to compute an approximation to \emph{TweetRank} based on Monte Carlo methods, and a simple search engine designed as a demonstration of our work.
+\end{abstract}
+%\\ \\ \\
+
+%\tableofcontents  % They want this report as an article, so no TOC. Look at the description on ir12/projekt
+
+\input{intro}
+\input{twitter_concepts}
+\input{tweetrank_definition}
+\input{implementation}
+\input{experiments}
+\input{summary}
+
+
+\bibliographystyle{abbrv}
+\bibliography{bibliography}
+
+\end{document}

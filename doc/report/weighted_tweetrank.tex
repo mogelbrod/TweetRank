@@ -1,0 +1,41 @@
+\subsection{Weighting using \emph{hashtags}}
+An extension of the previous definition of $G'$ could take into account some measure of similarity between users. Our idea is that users that share common interests would rank higher tweets from users with similar interests. We propose to use the \emph{hashtag} concept on Twitter to measure what a user talks about. However, as we will discuss later, the assumption behind this approach might be not true in many cases as we will discuss later.
+
+\subsubsection*{Hashtag similarity}
+The matrix $HT'$ represents the relation among users and hashtags, that is, wich hashtags are used (and how many times) by each user. $HT'$ is defined as it follows.
+\begin{equation}
+HT'_{i,j} = \text{Number of times that user } i \text{ uses the hashtag } j
+\end{equation}
+
+Each row $i$ in the matrix $HT'$ represents a feature vector $\vec{h}_i$ of the user $i$. The similarity between two users $i$ and $j$ is defined as the cosine of the angle formed by the vectors $\vec{h}_i$ and $\vec{h}_j$.
+\begin{equation}
+d_{i,j} = \frac{\vec{h}_i \cdot \vec{h}_j}{ |\vec{h}_i| \cdot |\vec{h}_j|}
+\end{equation}
+
+\subsubsection*{$G'$ extension to $G''$}
+Given $Z = \beta' L + \gamma' M + \delta' F + \epsilon' H$ (being $\beta' = \frac{\beta}{1-\alpha}$, $\gamma' = \frac{\gamma}{1-\alpha}$, $\delta' = \frac{\delta}{1-\alpha}, \epsilon' = \frac{\epsilon}{1 - \alpha}$),  $G'$ can be expressed as:
+\begin{equation}
+G' = \alpha R + \beta L + \gamma M + \delta F + \epsilon H =  \alpha R + (1-\alpha) Z
+\end{equation}
+
+Given that, we extended the definition of $G'$ and $Z$ to take into account the similarity between two users defined before. 
+\begin{equation}
+Z'_{i,j} = \frac{d_{u_i,u_j} Z_{i,j}}{\sum_{j \in T}{d_{u_i,u_j} Z_{i,j}}}
+\end{equation}
+
+Note that this definition presents a little problem with users that have orthogonal feature vectors or zero-vectors: the distance between them will be 0, and the $Z'_{i,j}$ element will be 0 as well. A constant value $k > 0$ to $d_{u_i,u_j}$ is added to ensure that as fas as $Z_{i,j}$ is different to 0, $Z''_{i,j}$ will be different to zero as well.
+\begin{equation}
+Z''_{i,j} = \frac{ (d_{u_i,u_j} + k) Z_{i,j}}{\sum_{j \in T}{(d_{u_i,u_j} + k) Z_{i,j}}}
+\end{equation}
+
+Thus, the weighted-probability of visiting the tweet $j$ from tweet $i$ would be expressed by the matrix $G''$ defined as:
+\begin{equation}
+G'' = \alpha R + (1 - \alpha) Z''
+\end{equation}
+
+\subsubsection*{Disadvantages of similarity weighting}
+This extension presents some disadvantages. The first one is that adding a new parameter $k$ adds more complexity to our system and makes harder to select the optimal values for the model parameters. Choosing a value for $k$ too high would vanish the effect of the weighting and a value too small would make even sparser the graph matrix of Twitter, which was already much sparse.
+
+The second problem is given by the assumption which this approach relies on: the fact that users would rank higher tweets from other users with similar interests. For example, suppose two users that use to post comments about politics: it seems unlikely that a conservative person would give an high score to tweets from progressive users. Even if they share the same hashtag, the opinion expressed in both tweets will be very different.
+
+Because of these two reasons we did not implement this extension in our TweetRank computation. However, notice that an adaptation of algorithm \ref{algo:alg1} can be easily implemented to take into account that score. The only thing that has to be changed is how the visit counter is updated.

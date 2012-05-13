@@ -3,9 +3,6 @@ data/*
 !data/start_proxies.txt
 !data/README.md
 
-doc/tweetrank_draft/*
-doc/tweetrank_draft/tweetrank_draft.tex
-
 crawler/__pycache__
 
 .DS_Store*
@@ -28,3 +25,8 @@ Thumbs.db
 *.rar
 *.tar
 *.zip
+
+doc/report/*.log
+doc/report/*.aux
+doc/report/*.blg
+doc/report/*.bbl

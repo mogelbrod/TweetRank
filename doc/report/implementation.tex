@@ -1,0 +1,36 @@
+\section {Implementation}
+
+\subsection{Overview}
+We implemented a small search engine that uses TweetRank to rank the tweets crawled from Twitter. The search engine has three main components: the crawler module, the \emph{ranker} module, and the Solr module. Figure \ref{fig:overview} represents the communication among the different components.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.4\textwidth]{../tweetmap.png} 
+\caption{Overview of our search engine.}
+\label{fig:overview}
+\end{figure}
+
+The crawler continuously fetches tweets from Twitter users using the Twitter API, saves the data to disk as a backup, parses it to extract the required information for our algorithms, and sends the parsed data to the ranker and the Solr module. The crawler sends the data to Solr using XML its XML POST request specification and it sends data to the ranker using a protocol designed by us. The crawler was designed to run in multiple threads or multiple machines.
+
+
+\input{implementation_ranker}
+%\input{implementation_httpserver} % Too extensive, I wouldn't talk about the crawler and the http server too much, just mention them in the overview.
+
+
+\subsection{Solr - Incomplete!}
+Solr 3.6 were used as the query interface for the TweetRank. It receives the Tweets from the Crawler by XML POST requests and indexes them. To improve the usability we also make use of the built-in tf-idf scoring that is offered by Solr/Lucene.
+
+The TweetRank scores which are calculated at the ranker component which then prints the results as key value pairs in a plain text formatted file. This file is then used by Solr as an ''External file field'' which we combine with the other ranking attributes. The ranking attributes that we base our weighting on are the following:
+
+\begin{itemize}
+	\item \textbf{Hashtag} - If any hashtags are mentioned in the tweet $T$ for the query $Q$, we give additional score to $T$ for the query $Q$.
+	\item \textbf{Username} - If the username of the author of tweet $T$ is found in query $Q$, we give additional score to $T$ for the query $Q$.
+\end{itemize}
+
+In addition to the the mentions above, we give an additional score to tweets that have been tweeted recently. The function we used for this additional date score is following: 
+
+\begin{equation}
+\frac{a}{m*x+b}
+\end{equation}
+
+where we have defined $x$ as the age of the tweet in milliseconds, $m = 3.16E^{-11}$, $a = 0.08$ and $b = 0.05$. 
