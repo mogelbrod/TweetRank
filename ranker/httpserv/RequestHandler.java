@@ -9,6 +9,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.TimerTask;
 
 import info.ziyan.net.httpserver.HttpContext;
 import info.ziyan.net.httpserver.HttpHandler;
@@ -57,10 +58,12 @@ public class RequestHandler implements HttpHandler {
 
 	private PersistentGraph graph;
 	private TweetRankComputer trcomputer;
+	private TimerTask trtask;
 
-	public RequestHandler(PersistentGraph graph, TweetRankComputer trcomputer) {
+	public RequestHandler(PersistentGraph graph, TweetRankComputer trcomputer, TimerTask computask) {
 		this.graph = graph;
 		this.trcomputer = trcomputer;
+		this.trtask = computask;
 	}
 
 	private static HashMap<String,ArrayList<String>> parseParams(String body_line) throws Exception {
@@ -290,7 +293,13 @@ public class RequestHandler implements HttpHandler {
 		} catch ( Throwable th ) {
 			logger.error("Error during status recopilation.", th);
 			sendServerErrorResponse(context.getResponse(), "");
-		}		
+		}	
+	}
+	
+	private void handleCompute(HttpContext context) {
+		Thread th = new Thread(trtask);
+		th.start();
+		sendOKResponse(context.getResponse(), "TweetRank computation started!");
 	}
 
 	/** This method is executed when a new HTTP connection is accepted
@@ -300,6 +309,8 @@ public class RequestHandler implements HttpHandler {
 			handleData(context);
 		} else if ( context.getRequest().getPath().equals("/status") ) {
 			handleStatus(context);
+		} else if ( context.getRequest().getPath().equals("/compute") ) {
+			handleCompute(context);
 		} else {
 			sendBadRequestResponse(context.getResponse(), "Unknown context.");
 		}

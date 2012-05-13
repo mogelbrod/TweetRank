@@ -36,6 +36,7 @@ public class TweetRanker {
 	private Timer storeTimer = new Timer();
 	private PersistentGraph graph;
 	private TweetRankComputer ranker;
+	private RankingComputationTask computask = new RankingComputationTask();
 
 	/** Converts minutes to milliseconds. */
 	private static long MinToMilli(long min) { return min*60000; }
@@ -132,12 +133,12 @@ public class TweetRanker {
 		super();
 		this.graph = graph;
 		this.ranker = new TweetRankComputer();
-		server = new HttpServer(TweetRanker.PORT,  new RequestHandler(this.graph, this.ranker));
+		server = new HttpServer(TweetRanker.PORT,  new RequestHandler(this.graph, this.ranker, this.computask));
 	}
 
 	public void start() {
 		server.start();
-		rankerTimer.schedule(new RankingComputationTask(), RankingPeriod, RankingPeriod);
+		rankerTimer.schedule(this.computask, RankingPeriod, RankingPeriod);
 		storeTimer.schedule(new PersistentStoreTask(), StoringPeriod, StoringPeriod);
 	}
 
