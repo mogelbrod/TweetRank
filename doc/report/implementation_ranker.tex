@@ -1,0 +1,57 @@
+\subsection{TweetRank}\label{sec:tweetrank_implementation}
+Algorithm \ref{algo:alg1} is used to compute the TweetRank score and it is an adaptation of the classic Monte Carlo complete path stopping at dangling nodes method. The graph from Twitter $G$ is just the set of relationships described in section \ref{sec:tweetrank_definition}. Algorith \ref{algo:alg1} includes some predefined functions that are not described here, however we thought that their name is descriptive enough.
+
+\begin{algorithm}
+\caption{Compute TweetRank using MC complete path stopping at dangling nodes}
+\label{algo:alg1}
+{\fontsize{8}{8}\selectfont
+\begin{algorithmic}
+\REQUIRE Probabilities $\alpha, \beta, \gamma, \delta, \epsilon$ such that $\alpha+\beta+\gamma+\delta+\epsilon=1$, Twitter graph $G$ and $M \in \mathbb{N}$ such that $T\times M \in O(T^2)$.
+\ENSURE $\pi$, TweetRank of tweets in $T(G)$.
+\STATE $V_t \leftarrow 0, \forall t \in T$ \COMMENT{Visit counter for tweets}
+\STATE $CP_0 \leftarrow \alpha$ \COMMENT{Cumulative probabilities for each action}
+\FORALL{$t \in T(G)$}
+\FOR {$m=1$ to $M$}
+\STATE $ct \leftarrow t$
+\STATE $stop \leftarrow False$
+\WHILE {$\neg stop$}
+
+\STATE $CP_1 \leftarrow CP_0 + \beta \cdot hasRetweetOrReply(ct)$
+\STATE $CP_2 \leftarrow CP_1 + \gamma \cdot hasMentions(ct)$
+\STATE $CP_3 \leftarrow CP_2 + \delta \cdot hasFriends(user(ct))$
+\STATE $CP_4 \leftarrow CP_3 + \epsilon \cdot hasHashtags(ct)$
+
+\STATE $r \leftarrow UniformRandomNumber(0, CP_4)$ \COMMENT{This ensures that all rows sums 1.0}
+
+\IF { $r \leq CP_0$ }
+\STATE $ct \leftarrow jumpToRandomTweet()$
+\STATE $stop \leftarrow True$
+\ELSIF { $r \leq CP_1$ }
+\STATE $ct \leftarrow jumpToRetweetOrReply(ct)$
+\ELSIF { $r \leq CP_2$ }
+\STATE $ct \leftarrow jumpToMentionTweet(ct)$
+\ELSIF { $r \leq CP_3$ }
+\STATE $ct \leftarrow jumpToFriendTweet(ct)$
+\ELSE
+\STATE $ct \leftarrow jumpToHashtagTweet(ct)$
+\ENDIF
+\STATE $V_{ct} \leftarrow V_{ct} + 1$ 
+\ENDWHILE
+\ENDFOR
+\ENDFOR
+\STATE $\pi_t \leftarrow Normalize(V)$ \COMMENT{TweetRank as the normalized visit vector}
+\end{algorithmic}}
+\end{algorithm}
+
+Observe that the running time of algorithm \ref{algo:alg1} is non-deterministic, since it depends on the structure of the graph itself and the $\alpha$ parameter. Assuming random access memory, and no dangling nodes in graph, the previous algorithm has an expected running time bounded by $O(|T| \times M \times \mathbb{E}[|w|])$, where $\mathbb{E}[|w|]$ is the expected length of the random walk. The expected length of the random walk is obtained from the following
+equation:
+\begin{equation}
+\mathbb{E}[|w|] = \sum_{k=1}^{\infty} P(|w| = k) \cdot k = \sum_{k=1}^{\infty} (1 - \alpha)^{k-1} \cdot \alpha \cdot k = \frac{1}{\alpha}
+\end{equation}
+
+Given that $|T| \times M$ must be $O(|T|^ 2)$ to ensure a good approximation of TweetRank, the expected running time of algorithm \ref{algo:alg1} is:
+\begin{equation}\label{eq:running_time}
+O(|T| \times M \times \mathbb{E}[|w|]) = O(|T|^2 \times \frac{1}{\alpha}) = O(|T|^2)
+\end{equation}
+
+Note that equation \ref{eq:running_time} is an upper bound on the expected running time if the graph contains dangling nodes. On the other side, the assumption of random access memory might be a problem for a large index which does not fit in the main memory of a single machine. However, implementing TweetRank on a large-scale distributed system is not the approach of this work and we will maintain this assumption to keep the analysis simple.

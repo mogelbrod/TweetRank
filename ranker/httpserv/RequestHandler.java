@@ -9,6 +9,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.TimerTask;
 
 import info.ziyan.net.httpserver.HttpContext;
 import info.ziyan.net.httpserver.HttpHandler;
@@ -57,10 +58,12 @@ public class RequestHandler implements HttpHandler {
 
 	private PersistentGraph graph;
 	private TweetRankComputer trcomputer;
+	private TimerTask trtask;
 
-	public RequestHandler(PersistentGraph graph, TweetRankComputer trcomputer) {
+	public RequestHandler(PersistentGraph graph, TweetRankComputer trcomputer, TimerTask computask) {
 		this.graph = graph;
 		this.trcomputer = trcomputer;
+		this.trtask = computask;
 	}
 
 	private static HashMap<String,ArrayList<String>> parseParams(String body_line) throws Exception {
@@ -215,7 +218,7 @@ public class RequestHandler implements HttpHandler {
 						graph.addRefTweets(id, refLongIDs.get(0));
 					} else if (type == Type.FOLLOWING) {
 						logger.debug("ADD " + type + ": "+ id + " " + refLongIDs);
-						graph.addFollows(id, refLongIDs);
+						graph.addFriends(id, refLongIDs);
 					} else if (type == Type.MENTION) {
 						logger.debug("ADD " + type + ": "+ id + " " + refLongIDs);
 						graph.addMentioned(id, refLongIDs);
@@ -252,7 +255,7 @@ public class RequestHandler implements HttpHandler {
 			"Number of users: " + graph.getNumberOfUsers() + "\n" +
 			"Number of hashtags: " + graph.getNumberOfHashtags() + "\n" +
 			"Average tweets per user: " + graph.getAverageTweetsPerUser() + "\n" +
-			"Average effective friends per user: " + graph.getAverageEffectiveFriendsPerUser() + "\n" +
+			"Average effective friends per user: " + graph.getAverageFriendsPerUser() + "\n" +
 			"Average references per tweet: " + graph.getAverageReferencePerTweet() + "\n" +
 			"Average mentions per tweet: " + graph.getAverageMentionsPerTweet() + "\n" +
 			"Average hashtags per tweet: " + graph.getAverageHashtagsPerTweet() + "\n\n";
@@ -270,14 +273,19 @@ public class RequestHandler implements HttpHandler {
 				"Number of users: " + trcomputer.getTemporaryGraph().getNumberOfUsers() + "\n" +
 				"Number of hashtags: " + trcomputer.getTemporaryGraph().getNumberOfHashtags() + "\n" +
 				"Average tweets per user: " + trcomputer.getTemporaryGraph().getAverageTweetsPerUser() + "\n" +
-				"Average effective friends per user: " + trcomputer.getTemporaryGraph().getAverageEffectiveFriendsPerUser() + "\n" +
+				"Average effective friends per user: " + trcomputer.getTemporaryGraph().getAverageFriendsPerUser() + "\n" +
 				"Average references per tweet: " + trcomputer.getTemporaryGraph().getAverageReferencePerTweet() + "\n" +
 				"Average mentions per tweet: " + trcomputer.getTemporaryGraph().getAverageMentionsPerTweet() + "\n" +
 				"Average hashtags per tweet: " + trcomputer.getTemporaryGraph().getAverageHashtagsPerTweet() + "\n\n";
 			} else {
 				response += "Temporary graph not initialized.\n\n";
 			}
+			
 			response += "Last computation: " + (enddate == null ? "Never" : Time.formatDate("yyyy/MM/dd HH:mm:ss", enddate)) + "\n";
+			if ( state == TweetRankComputer.State.WORKING ) {
+				response += "Approximate percentage of completion: " + trcomputer.getExpectedPercentageOfCompletion()*100 + "\n" +
+				"Approximate remaining time: " + trcomputer.getExpectedRemainingTime() + "\n";
+			}
 			if ( elapsed != null )	response += "Elapsed time: " + elapsed;
 
 
@@ -285,7 +293,13 @@ public class RequestHandler implements HttpHandler {
 		} catch ( Throwable th ) {
 			logger.error("Error during status recopilation.", th);
 			sendServerErrorResponse(context.getResponse(), "");
-		}		
+		}	
+	}
+	
+	private void handleCompute(HttpContext context) {
+		Thread th = new Thread(trtask);
+		th.start();
+		sendOKResponse(context.getResponse(), "TweetRank computation started!");
 	}
 
 	/** This method is executed when a new HTTP connection is accepted
@@ -295,6 +309,8 @@ public class RequestHandler implements HttpHandler {
 			handleData(context);
 		} else if ( context.getRequest().getPath().equals("/status") ) {
 			handleStatus(context);
+		} else if ( context.getRequest().getPath().equals("/compute") ) {
+			handleCompute(context);
 		} else {
 			sendBadRequestResponse(context.getResponse(), "Unknown context.");
 		}

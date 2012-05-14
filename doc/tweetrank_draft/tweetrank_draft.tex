@@ -12,8 +12,7 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-\noindent
-PageRank is an algorithm presented by Larry Page and Sergey Brin that allows to estimate the importance of a web page using the hyperlinks between them. This algorithm was originally the core of Google's search engine and proved to work very well in the web structure. Our task is to adapt the PageRank to work in the context of Twitter, not the whole web. This document presents the mathematical basis to compute, what we called, the \emph{TweetRank}.
+\noindent PageRank is an algorithm presented by Larry Page and Sergey Brin that allows to estimate the importance of a web page using the hyperlinks between them. This algorithm was originally the core of Google's search engine and proved to work very well in the web structure. Our task is to adapt the PageRank to work in the context of Twitter, not the whole web. This document presents the mathematical basis to compute, what we called, the \emph{TweetRank}.
 \end{abstract}
 %\\ \\ \\
 \tableofcontents
@@ -250,8 +249,27 @@ Upon successful parsing in the HTTP server, the data is sent to the ranker which
 
 \subsection{Page Rank}
 TODO
-\subsection{Solr}
-TODO
+
+\subsection{Solr - Incomplete!}
+Solr 3.6 were used as the query interface for the TweetRank. It receives the Tweets from the Crawler by XML POST requests and indexes them. To improve the usability we also make use of the built-in tf-idf scoring that is offered by Solr/Lucene.
+
+The TweetRank scores which are calculated at the ranker component which then prints the results as key value pairs in a plain text formatted file. This file is then used by Solr as an ''External file field'' which we combine with the other ranking attributes. The ranking attributes that we base our weighting on are the following:
+
+\begin{itemize}
+	\item \textbf{Hashtag} - If any hashtags are mentioned in the tweet $T$ for the query $Q$, we give additional score to $T$ for the query $Q$.
+	\item \textbf{Username} - If the username of the author of tweet $T$ is found in query $Q$, we give additional score to $T$ for the query $Q$.
+\end{itemize}
+
+In addition to the the mentions above, we give an additional score to tweets that have been tweeted recently. The function we used for this additional date score is following: 
+
+\begin{equation}
+\frac{a}{m*x+b}
+\end{equation}
+
+where we have defined $x$ as the age of the tweet in milliseconds, $m = 3.16E^{-11}$, $a = 0.08$ and $b = 0.05$. 
+
+
+
 \section{Summary}
 We adapted the definition of PageRank to fit in the Twitter context where direct references among tweets (retweets or replies) are not the usual way to navigate through Twitter. We proposed to take into account also mentions, followers and hashtags to determine the importance of a tweet. \\
 

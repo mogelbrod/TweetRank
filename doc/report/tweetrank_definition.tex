@@ -1,0 +1,69 @@
+\section{TweetRank definition}\label{sec:tweetrank_definition}
+TweetRank also defines the relevance of a tweet as the largest real eigenvector of a matrix $G'$, as PageRank did. However, our matrix will take into account not only the direct relationships among tweets (retweets and replies). The idea is that tweet $j$ can be accessed from tweet $i$ by:  
+\begin{itemize}
+\item $R_{i,j} = \frac{1}{|T|}$, random access probability.
+\item $L_{i,j}$, probability of accessing tweet $j$ following a retweet or reply on tweet $i$.
+\item $M_{i,j}$, probability of accessing tweet $j$ following a mention on tweet $i$.
+\item $F_{i,j}$, probability of accessing tweet $j$ accessing the owner of tweet $j$ from the friends of $i$'s owner, and then randomly choosing $j$.
+\item $H_{i,j}$, probability of accessing tweet $j$ accessing a hashtag used by $j$ from the hashtags used by $i$, and accessing randomly choosing $i$.
+\end{itemize}
+
+Given that, elements in $G'$ are defined as (with $\alpha + \beta + \gamma + \delta + \epsilon = 1$):
+\begin{equation}\label{eq:tweetrank}
+G'_{i,j} = \alpha R_{i,j} + \beta L_{i,j} + \gamma M_{i,j} + \delta F_{i,j} + \epsilon H_{i,j}
+\end{equation}
+
+\subsubsection*{$L_{i,j}$ approximation}
+\begin{equation}\label{eq:ref_prob}
+L_{i,j} = RT_{i,j} + RP_{i,j}
+\end{equation}
+
+The previous equation uses the result of equations \ref{eq:retweet_rel} and \ref{eq:reply_rel}. Note that a tweet can be either a retweet, a reply or none of them (new post). So, $RT_{i,j} + RP_{i,j}$ is equal to 0 or 1, and there are at most one non-zero element in the $i$-th row of matrix $L$.
+
+\subsubsection*{$M_{i,j}$ approximation}
+First, probability of visiting the profile of a user $j$ from a mention in a tweet $i$ is defined as $FM_{i,j}$. Remember that $m_i$ was defined as the number of mentions in tweet $i$. This definition uses the result of equation \ref{eq:mention_rel}. Then $M_{i,j}$ is defined in \ref{eq:mentions_probability}.
+
+\begin{equation}
+FM_{i,j} = \begin{cases}
+\frac{MN_{i,j}}{m_i} & \text{if } m_i > 0 \\
+0 & \text{otherwise}
+\end{cases}
+\end{equation}
+
+\begin{equation}\label{eq:mentions_probability}
+M_{i,j} = \frac{FM_{i, u_j}}{ |t \in T : u_t = u_j|}
+\end{equation}
+Note that $|t \in T : u_t = u_j|$ is just the number of tweets from user $u_j$. This means that the user visits a random user profile mentioned by a tweet, and then visist a random tweet of that user.
+
+\subsubsection*{$F_{i,j}$ approximation}
+In the first place, probability of visiting the profile of user $j$ accessing the following list of user $i$ is defined as $FF_{i,j}$. Notice that $f_i$ is the number of users followed by user $i$. Using this probability, $F_{i,j}$ is defined in \ref{eq:follows_probability}.
+\begin{equation}
+FF_{i,j} = \begin{cases}
+\frac{FW{i,j}}{f_i} & \text{if } f_i > 0 \\
+0 & \text{otherwise}
+\end{cases}
+\end{equation}
+
+\begin{equation}\label{eq:follows_probability}
+F_{i,j} = \frac{FF_{u_i, u_j}}{ |t \in T : u_t = u_j|}
+\end{equation}
+Note that $|t \in T : u_t = u_j|$ is just the number of tweets of user $u_j$. This means that the user visited a random user profile followed by the owner of a tweet, and the visited a random tweet of that user. 
+
+\subsubsection*{$H_{i,j}$ approximation}
+First, let's define the probability that a tweet $j$ is visited from tweet $i$, using the hashtag $k$. Remember that $ht_k$ denotes the number of tweets that use the hashtag $k$ and $th_i$ denotes the number of hashtags that are included in tweet $i$.
+
+\begin{equation}
+HP_{i,j,k} = \begin{cases}
+\left( \frac{ HT_{j,k} }{ ht_k } \right) \cdot \left( \frac{ HT_{i,k} }{ th_i } \right) & \text{if } ht_k > 0 \wedge th_i > 0 \\
+0 & \text{otherwise}
+\end{cases}
+\end{equation}
+
+Note that $HP_{i,j,k}$ will be greater than zero if, and only if, both $i$ and $j$ included the hashtag $k$. 
+
+Then, $H_{i,j}$ is defined as:
+\begin{equation}
+H_{i,j} = \sum_{k \in HS} HP_{i,j,k}
+\end{equation}
+
+\input{weighted_tweetrank}

@@ -1,0 +1,27 @@
+\subsection{HTTP server}
+
+The Python crawler sends data using the POST request method in the HTTP protocol to the Java program which contains a HTTP server. For this to work, we have developed a simple protocol which these programs use to communicate. The protocol looks like this:
+
+\begin{itemize}
+	\item \textbf{Type} - The type of the data being sent.
+	\begin{itemize}
+		\item \textbf{RT} or \textbf{RP} - This tweet is a reply/retweet of the referenced tweet.
+		\item \textbf{FW} - List of users that this user follows.
+		\item \textbf{HT} - List of hashtags mentioned in this tweet.
+		\item \textbf{MN} - List of users mentioned in this tweet.
+		\item \textbf{TW} - List of tweets written by this user.
+	\end{itemize}
+	\item \textbf{ID} The ID of this user/tweet. (User for FW \& TW, tweet for all others.)
+	\item \textbf{refID} Depends on the type.
+	\begin{itemize}
+		\item[] (RT/RP): Referenced tweet ID. Multiple IDs not allowed.
+		\item[] (FW): User ID(s) that this user follows.
+		\item[] (HT): Hashtag(s) mentioned in this tweet.
+		\item[] (MN): User ID(s) of users that are mentioned in this tweet.
+		\item[] (TW): Tweet ID(s) of tweets that are written by this user.
+	\end{itemize}
+\end{itemize}
+
+\textit{Implementation note: all IDs are handled as numbers of type Long. refID for HT/Hashtag and the type parameter are handled as Strings.}
+
+Upon successful parsing in the HTTP server, the data is sent to the ranker which adds it to the lists of already existing data.

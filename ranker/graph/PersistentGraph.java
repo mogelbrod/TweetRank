@@ -1,13 +1,11 @@
 package graph;
 
-
-import java.io.*;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.log4j.Logger;
 
-public class PersistentGraph {
+public class PersistentGraph extends Graph <HashSet<Long>, HashSet<String>>{
 	private static final Logger logger = Logger.getLogger("ranker.logger");
 	private final ReentrantLock tweetsLock = new ReentrantLock(true);
 	private final ReentrantLock userTweetsLock = new ReentrantLock(true);
@@ -16,85 +14,57 @@ public class PersistentGraph {
 	private final ReentrantLock refTweetsLock = new ReentrantLock(true);
 	private final ReentrantLock hashtagsLock = new ReentrantLock(true);
 
-	/** Contains all tweets */
-	private HashMap<Long,Long> tweetSet;
+	private boolean modified_graph;
 
-	/** Maps users to tweets */
-	private HashMap<Long,HashSet<Long>> userTweets;
 
-	/** Maps a tweet to a list of user mentions */
-	private HashMap<Long,HashSet<Long>> mentioned;
-
-	/** Maps a user to a list of users he/she follows */
-	private HashMap<Long,HashSet<Long>> follows;
-
-	/** Map a reply/retweet to the original tweet */
-	private HashMap<Long,Long> refTweets;
-
-	/** Map a tweet to a list of hashtags */
-	private HashMap<Long,HashSet<String>> hashtagsByTweet;
-	private HashMap<String,HashSet<Long>> tweetsByHashtag;
-
-	private static Object loadObject(String path, String name) {
-		Object robject = null;
-		try {
-			FileInputStream file = new FileInputStream(path + "/" + name);
-			ObjectInputStream obj = new ObjectInputStream(file);
-			robject = obj.readObject();
-		} catch (FileNotFoundException e) {
-			logger.info("File " + name + " has been created!");
-		} catch (Throwable t) {
-			logger.fatal("Error loading the persistent graph.", t);
-		}
-		return robject;
-	}
-
-	private static void saveObject(String path, String name, Object obj) {
-		try {
-			FileOutputStream fObject   = new FileOutputStream(path + "/" + name);
-			ObjectOutputStream oObject = new ObjectOutputStream(fObject);
-			oObject.writeObject(obj);
-			oObject.close();
-		} catch (Throwable t) {
-			logger.error("Error saving the file " + path + "/" + name + "!", t);
-		}		
-	}
-
-	/** Constructor. The oldGraph is set to null. */
 	@SuppressWarnings("unchecked")
-	public PersistentGraph(String name, String path, Integer version) {
-		tweetSet = (HashMap<Long, Long>)loadObject(path, name + "__TweetSet-" + version);
-		if ( tweetSet == null ) tweetSet = new HashMap<Long,Long>();
+	public PersistentGraph(String path, String prefix, Integer version) {
+		lockAll();
+		try {
+			tweets = (HashMap<Long, Long>)utils.Functions.loadObject(path, prefix + "__TweetSet-" + version);
+			if ( tweets == null ) tweets = new HashMap<Long,Long>();
 
-		mentioned  = (HashMap<Long, HashSet<Long>>)loadObject(path, name + "__Mention-" + version);
-		if (mentioned == null) mentioned = new HashMap<Long, HashSet<Long>>();
+			mentions  = (HashMap<Long, HashSet<Long>>)utils.Functions.loadObject(path, prefix + "__Mention-" + version);
+			if (mentions == null) mentions = new HashMap<Long, HashSet<Long>>();
 
-		follows  = (HashMap<Long, HashSet<Long>>)loadObject(path, name + "__Follows-" + version);
-		if (follows == null) follows = new HashMap<Long, HashSet<Long>>();
+			friends  = (HashMap<Long, HashSet<Long>>)utils.Functions.loadObject(path, prefix + "__Follows-" + version);
+			if (friends == null) friends = new HashMap<Long, HashSet<Long>>();
 
-		refTweets  = (HashMap<Long, Long>)loadObject(path, name + "__RefTweets-" + version);
-		if (refTweets == null) refTweets = new HashMap<Long, Long>();
+			references  = (HashMap<Long, Long>)utils.Functions.loadObject(path, prefix + "__RefTweets-" + version);
+			if (references == null) references = new HashMap<Long, Long>();
 
-		userTweets  = (HashMap<Long, HashSet<Long>>)loadObject(path, name + "__UserTweets-" + version);
-		if (userTweets == null) userTweets = new HashMap<Long, HashSet<Long>>();		
+			tweetsByUser  = (HashMap<Long, HashSet<Long>>)utils.Functions.loadObject(path, prefix + "__UserTweets-" + version);
+			if (tweetsByUser == null) tweetsByUser = new HashMap<Long, HashSet<Long>>();		
 
-		hashtagsByTweet  = (HashMap<Long, HashSet<String>>)loadObject(path, name + "__HashtagsByTweet-" + version);
-		if (hashtagsByTweet == null) hashtagsByTweet = new HashMap<Long, HashSet<String>>();	
+			hashtagsByTweet  = (HashMap<Long, HashSet<String>>)utils.Functions.loadObject(path, prefix + "__HashtagsByTweet-" + version);
+			if (hashtagsByTweet == null) hashtagsByTweet = new HashMap<Long, HashSet<String>>();	
 
-		tweetsByHashtag  = (HashMap<String, HashSet<Long>>)loadObject(path, name + "__TweetsByHashtag-" + version);
-		if (tweetsByHashtag == null) tweetsByHashtag = new HashMap<String, HashSet<Long>>();		
+			tweetsByHashtag  = (HashMap<String, HashSet<Long>>)utils.Functions.loadObject(path, prefix + "__TweetsByHashtag-" + version);
+			if (tweetsByHashtag == null) { tweetsByHashtag = new HashMap<String, HashSet<Long>>(); }
+
+			modified_graph = false;
+		} catch (Throwable t) {
+			logger.fatal(t.getMessage(), t);
+		} finally {
+			unlockAll();
+		}		
 	}
 
 	public void store(String path, String name, Integer version) {
 		lockAll();
 		try {
-			saveObject(path, name + "__TweetSet-" + version, tweetSet);
-			saveObject(path, name + "__Mention-" + version, mentioned);
-			saveObject(path, name + "__Follows-" + version, follows);
-			saveObject(path, name + "__RefTweets-" + version, refTweets);
-			saveObject(path, name + "__UserTweets-" + version, userTweets);
-			saveObject(path, name + "__HashtagsByTweet-" + version, hashtagsByTweet);
-			saveObject(path, name + "__TweetsByHashtag-" + version, tweetsByHashtag);
+			if ( modified_graph ) {
+				utils.Functions.saveObject(path, name + "__TweetSet-" + version, tweets);
+				utils.Functions.saveObject(path, name + "__Mention-" + version, mentions);
+				utils.Functions.saveObject(path, name + "__Follows-" + version, friends);
+				utils.Functions.saveObject(path, name + "__RefTweets-" + version, references);
+				utils.Functions.saveObject(path, name + "__UserTweets-" + version, tweetsByUser);
+				utils.Functions.saveObject(path, name + "__HashtagsByTweet-" + version, hashtagsByTweet);
+				utils.Functions.saveObject(path, name + "__TweetsByHashtag-" + version, tweetsByHashtag);
+				modified_graph = false;
+			}
+		} catch (Throwable t) {
+			logger.error(t.getMessage(), t);
 		} finally {
 			unlockAll();
 		}
@@ -110,21 +80,21 @@ public class PersistentGraph {
 	}
 
 	private void unlockAll() {
-		tweetsLock.unlock();
-		mentionedLock.unlock();
-		followsLock.unlock();
-		refTweetsLock.unlock();
 		hashtagsLock.unlock();
+		refTweetsLock.unlock();
+		followsLock.unlock();
+		mentionedLock.unlock();
 		userTweetsLock.unlock();
+		tweetsLock.unlock();
 	}
 
 	private void addTweet(Long tweetID, Long userID) {
 		tweetsLock.lock();
 		try{
 			// In case we add the userID later, we need to override the previous value in tweetSet
-			Long cuID = tweetSet.get(tweetID);
-			if ( cuID == null || cuID.equals(-1L) ) 
-				tweetSet.put(tweetID, userID);
+			Long cuID = tweets.get(tweetID);
+			if ( cuID == null || cuID.equals(-1L) )
+				tweets.put(tweetID, userID);
 		} catch (Throwable t) {
 			logger.error("Error adding a tweet.", t);
 		} finally {
@@ -142,7 +112,8 @@ public class PersistentGraph {
 		try{
 			addTweet(tweetID, -1L);
 			addTweet(refTweetID, -1L);
-			refTweets.put(tweetID, refTweetID);
+			references.put(tweetID, refTweetID);
+			modified_graph = true;
 		} catch (Throwable t) {
 			logger.error("Error adding a reference.", t);
 		} finally {
@@ -153,11 +124,12 @@ public class PersistentGraph {
 	public void addUserTweets(Long userID, List<Long> tweetIDs) {
 		userTweetsLock.lock();
 		try{
-			HashSet<Long> curr_list = userTweets.get(userID);
+			HashSet<Long> curr_list = tweetsByUser.get(userID);
 			if (curr_list == null) curr_list = new HashSet<Long>();
 			curr_list.addAll(tweetIDs);
 			addAllTweets(tweetIDs, userID);
-			userTweets.put(userID, curr_list);
+			tweetsByUser.put(userID, curr_list);
+			modified_graph = true;
 		} catch (Throwable t) {
 			logger.error("Error adding a user tweet.", t);
 		} finally {
@@ -168,11 +140,12 @@ public class PersistentGraph {
 	public void addMentioned(Long tweetID, List<Long> userIDs) {
 		mentionedLock.lock();
 		try{
-			HashSet<Long> curr_list = mentioned.get(tweetID);
+			HashSet<Long> curr_list = mentions.get(tweetID);
 			if (curr_list == null) curr_list = new HashSet<Long>();
 			curr_list.addAll(userIDs);
 			addTweet(tweetID, -1L);
-			mentioned.put(tweetID, curr_list);
+			mentions.put(tweetID, curr_list);
+			modified_graph = true;
 		} catch (Throwable t) {
 			logger.error("Error adding a mention.", t);
 		} finally {
@@ -180,13 +153,14 @@ public class PersistentGraph {
 		}
 	}
 
-	public void addFollows(Long userID, List<Long> userIDs) {
+	public void addFriends(Long userID, List<Long> userIDs) {
 		followsLock.lock();
 		try{
-			HashSet<Long> curr_list = follows.get(userID);
+			HashSet<Long> curr_list = friends.get(userID);
 			if (curr_list == null) curr_list = new HashSet<Long>();
 			curr_list.addAll(userIDs);
-			follows.put(userID, curr_list);
+			friends.put(userID, curr_list);
+			modified_graph = true;
 		} catch (Throwable t) {
 			logger.error("Error adding a friend.", t);
 		} finally {
@@ -211,6 +185,7 @@ public class PersistentGraph {
 			}
 
 			addTweet(tweetID, -1L);
+			modified_graph = true;
 		} catch (Throwable t) {
 			logger.error("Error adding a hashtag.", t);
 		} finally {
@@ -218,90 +193,87 @@ public class PersistentGraph {
 		}
 	}
 
-	public int getNumberOfTweets() {
-		return tweetSet.size();
-	}
-
-	public int getNumberOfUsers() {
-		return userTweets.size();
-	}
-
-	public int getNumberOfHashtags() {
-		return tweetsByHashtag.size();
-	}
-
-	public double getAverageTweetsPerUser() {
-		if (userTweets.size() == 0) return 0.0;
-		return getNumberOfTweets()/(double)userTweets.size();
-	}
-
-	public double getAverageReferencePerTweet() {
-		if (tweetSet.size() == 0) return 0.0;
-		return refTweets.size()/(double)tweetSet.size();
-	}	
-
-	/**
-	 * The Effective Friends are those friends who have posted
-	 * some tweet. This method returns the mean of the
-	 * effective friends that users have.
-	 * @return The average number of effective friends per user. 
-	 */
-	public double getAverageEffectiveFriendsPerUser() {
-		double avg_fpu = 0.0;
+	@Override
+	public double getAverageFriendsPerUser() {
+		double avg = 0.0;
 		followsLock.lock();
-		userTweetsLock.lock();
-		try {
-			if (follows.size() > 0)  {
-				int Tfriends = 0;
-				for( HashSet<Long> friendsSet : follows.values() ) {
-					for ( Long friend : friendsSet ) {
-						HashSet<Long> tweets_by_friend = userTweets.get(friend);
-						if (tweets_by_friend != null && tweets_by_friend.size() > 0) 
-							Tfriends++;
-					}
-				}
-				avg_fpu = Tfriends/(double)follows.size();
-			}
-		} finally {
-			userTweetsLock.unlock();
-			followsLock.unlock();
-		}
-		return avg_fpu;
+		try { avg = super.getAverageFriendsPerUser(); } 
+		finally { followsLock.unlock();	}
+		return avg;
 	}
 
+	@Override
 	public double getAverageMentionsPerTweet() {
-		double avg_mpt = 0.0;
+		double avg = 0.0;
 		mentionedLock.lock();
-		tweetsLock.lock();
-		try {
-			if ( tweetSet.size() > 0 ) {
-				int Tmentions = 0;
-				for( HashSet<Long> l : mentioned.values() )
-					Tmentions += l.size();
-				avg_mpt = Tmentions/(double)tweetSet.size();
-			}
-		} finally {
-			tweetsLock.unlock();
-			mentionedLock.unlock();
-		}
-		return avg_mpt;
+		try { avg = super.getAverageMentionsPerTweet(); }
+		finally { mentionedLock.unlock(); }
+		return avg;
 	}
 
+	@Override
 	public double getAverageHashtagsPerTweet() {
-		double avg_hpt = 0.0;
+		double avg = 0.0;
 		hashtagsLock.lock();
-		tweetsLock.lock();
-		try {
-			if ( tweetSet.size() > 0 ) {
-				int Thashtags = 0;
-				for( HashSet<String> l : hashtagsByTweet.values() )
-					Thashtags += l.size();
-				avg_hpt = Thashtags/(double)tweetSet.size();
-			}
+		try { avg = super.getAverageHashtagsPerTweet(); }
+		finally { hashtagsLock.unlock(); }
+		return avg;
+	}
+
+	@Override
+	public double getAverageActiveFriendsPerUser() {
+		HashMap<Long, HashSet<Long>> activeFriendship = filterActiveFriendship(friends, tweetsByUser);
+		long Tfriends = 0;
+		for(HashSet<Long> friends : activeFriendship.values() )
+			Tfriends += friends.size();
+		return (Tfriends > 0 ? Tfriends/(double)tweetsByUser.size() : 0.0);
+	}
+
+	@Override
+	public double getAverageActiveMentionsPerTweet() {
+		HashMap<Long, HashSet<Long>> activeMentionship = filterActiveMentionship(mentions, tweetsByUser);
+		long Tmentions = 0;
+		for(HashSet<Long> friends : activeMentionship.values() )
+			Tmentions += friends.size();
+		return (Tmentions > 0 ? Tmentions/(double)tweets.size() : 0.0);
+	}
+
+	public TemporaryGraph createTemporaryGraph () {
+		TemporaryGraph tempGraph = null;
+		lockAll();
+		try {		
+			HashMap<Long, Long> tTweetSet = tweets;
+			HashMap<Long, Long> tRefTweets = new HashMap<Long,Long>(references);
+			HashMap<Long, ArrayList<Long>> tUserTweets = utils.Functions.MapOfSetsToMapOfLists(tweetsByUser);
+			HashMap<Long, ArrayList<Long>> tMentioned = utils.Functions.MapOfSetsToMapOfLists(filterActiveMentionship(mentions, tweetsByUser));
+			HashMap<Long, ArrayList<Long>> tFollows = utils.Functions.MapOfSetsToMapOfLists(filterActiveFriendship(friends, tweetsByUser));
+			HashMap<Long, ArrayList<String>> tHashtagsByTweet = utils.Functions.MapOfSetsToMapOfLists(hashtagsByTweet);
+			HashMap<String, ArrayList<Long>> tTweetsByHashtag = utils.Functions.MapOfSetsToMapOfLists(tweetsByHashtag);
+			tempGraph = new TemporaryGraph(tTweetSet, tRefTweets, tUserTweets, tMentioned, tFollows, tHashtagsByTweet, tTweetsByHashtag);
+		} catch ( Exception e ) {
+			logger.error("Error creating temporal graph.", e);
 		} finally {
-			tweetsLock.unlock();
-			hashtagsLock.unlock();
+			unlockAll();
 		}
-		return avg_hpt;
+
+		return tempGraph;
+	}
+
+	@Override
+	protected HashSet<Long> filterActiveFriends(HashSet<Long> friends, HashMap<Long, HashSet<Long>> tweetsByUser) {
+		HashSet<Long> activeFriends = new HashSet<Long>();
+		for( Long friend : friends )
+			if ( tweetsByUser.get(friend) != null && tweetsByUser.get(friend).size() > 0 )
+				activeFriends.add(friend);
+		return activeFriends;
+	}
+
+	@Override
+	protected HashSet<Long> filterActiveMentions(HashSet<Long> mentions, HashMap<Long, HashSet<Long>> tweetsByUser) {
+		HashSet<Long> activeMentions = new HashSet<Long>();
+		for( Long user : mentions )
+			if ( tweetsByUser.get(user) != null && tweetsByUser.get(user).size() > 0 )
+				activeMentions.add(user);
+		return activeMentions;
 	}
 }
