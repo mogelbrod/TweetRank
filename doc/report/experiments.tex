@@ -1,17 +1,32 @@
 \section{Experiments}
-Measuring the quality of the TweetRank score is difficult because there are no reference corpora to be tested on, the only thing that we did was to try it together with Solr and check that the results quality was good.
+Measuring the quality of the TweetRank score is difficult because there are no reference corpora to be tested on, the only thing that we did was to try it together with Solr and checked that the results quality was good.
 
-We also plotted the sorted list of TweetRank values in log-log scale and checked that it follows closely the power law, as it was stated by \cite{Avrachenkov:2007:MCM:1272804.1272825}. Figure \ref{fig:tweetrank_powerlaw} shows this fact.
+We implemented the Power Iteration method for TweetRank and computed the TweetRank for small sets of tweets with a precision of $10^{-10}$. Table \ref{table:mc_errors} shows the relative error between the ranking obtained by Power Iteration and our Monte Carlo approximation. We also plotted the sorted list of TweetRank values in log-log scale and checked that it follows closely the power law, as it was stated by \cite{Avrachenkov:2007:MCM:1272804.1272825}. Figure \ref{fig:tweetrank_powerlaw} shows this fact.
+
+\begin{table}
+\centering
+\begin{tabular}{|c|c|}
+\hline Tweets & Relative error (\%) \\
+\hline 5658 & $8.13109904923 \cdot 10^{-4}$ \\
+\hline 17174 & $6.10684768151 \cdot 10^{-5}$ \\
+\hline 32828 & $7.79007058261 \cdot 10^{-5}$ \\
+\hline 46934 & $2.724550120103 \cdot 10^{-5}$ \\
+\hline
+\end{tabular}
+\caption{Relative error between our algorithm and Power Iteration with $10^{-10}$ precision}
+\label{table:mc_errors}
+\end{table}
 
 \begin{figure}
 \centering
 \subfigure[Sorted TweetRank, loglog scale]{\includegraphics[width=0.4\textwidth]{tweetrank_powerlaw.pdf}\label{fig:tweetrank_powerlaw}}
 \qquad
-\subfigure[Number of tweets vs. running time]{\includegraphics[width=0.4\textwidth]{tweetrank_times.pdf}\label{fig:tweetrank_times}} 
+\subfigure[Running time vs. tweets]{\includegraphics[width=0.4\textwidth]{tweetrank_times.pdf}\label{fig:tweetrank_times}} 
 \caption{Experiment results}
 \end{figure}
 
 Figure \ref{fig:tweetrank_times} shows the number of tweets versus the running time. We see that a quadratic curve fits very well with the experimental data, which confirms our analysis of the expected running time described in equation \ref{eq:running_time} (section \ref{sec:tweetrank_implementation}). These results were obtained on a machine and parameters specified in table \ref{table:machine_spec}. 
+
 \begin{table}
 \centering
 \begin{tabular}{|c|c|}
@@ -19,7 +34,7 @@ Figure \ref{fig:tweetrank_times} shows the number of tweets versus the running t
 \hline Memory & Main: 4GB DDR3, Cache L3: 3MB, Cache L2: 256KB \\
 \hline OS &  Mac OS X 10.6.8 Snow Leopard \\
 \hline Compiler & javac 1.6.0\_31, 64 bits, no optimization parameters \\
-\hline Others & 8 threads, $\alpha = 0.2, \beta = 0.4, \gamma = 0.2, \delta = 0.04, \epsilon = 0.16, \zeta = 0.2, M = T/100$ \\
+\hline Others & 8 threads, $\alpha = 0.2, \beta = 0.4, \gamma = 0.2, \delta = 0.04, \epsilon = 0.16, M = T/100$ \\
 \hline
 \end{tabular}
 \caption{Specification of the machine used for experimentation}
