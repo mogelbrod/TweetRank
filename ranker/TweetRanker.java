@@ -4,9 +4,7 @@ import computer.TweetRankComputer;
 import httpserv.RequestHandler;
 import info.ziyan.net.httpserver.HttpServer;
 
-import java.io.File;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
@@ -24,7 +22,7 @@ public class TweetRanker {
 	private static final Logger logger = Logger.getLogger("ranker.logger");
 	public static final int PORT = 4711;
 
-	private static String name = "graph";
+	private static String prefix = "graph";
 	private static String path = "../data/graph/";
 	//private static String RankingName = "../data/tweetrank.tr";
 	private static String RankingName = "/home/ir12/apache-solr-3.6.0/example/solr/data/external_rank";
@@ -56,33 +54,9 @@ public class TweetRanker {
 		public void run() {
 			logger.info("Closing...");
 			this.server.stop();
-			Integer version = graphVersion() + 1;
-			this.graph.store(path, name, version);
+			Integer version = utils.Functions.graphLastVersion(path, prefix) + 1;
+			this.graph.store(path, prefix, version);
 		}		
-	}
-
-	private static int graphVersion() {
-		File dir = new File(path);
-
-		FilenameFilter filter = new FilenameFilter() {
-			public boolean accept(File dir, String fname) {
-				return fname.startsWith(name + "__");
-			}
-		};
-
-		String[] children = dir.list(filter);
-		if ( children == null ) return 0;
-
-		Integer val = null;
-		for(int ch = 0; ch < children.length; ++ch) {
-			String[] parts = children[ch].split("-");
-			if (parts.length < 2) continue;
-			if ( val == null || Integer.valueOf(parts[1]).compareTo(val) > 0 )
-				val = Integer.valueOf(parts[1]);
-		}
-
-		if ( val == null ) return 0;
-		else return val;
 	}
 
 	/** Periodic TweetRank computation task. */
@@ -124,8 +98,8 @@ public class TweetRanker {
 		@Override
 		public void run() {
 			logger.info("Storing persistent graph...");
-			int nextVersion = graphVersion() + 1;
-			graph.store(path, name, nextVersion);
+			int nextVersion = utils.Functions.graphLastVersion(path, prefix) + 1;
+			graph.store(path, prefix, nextVersion);
 		}
 	}
 
@@ -154,8 +128,8 @@ public class TweetRanker {
 		logger.setLevel(Level.INFO);
 
 		try {	
-			Integer version = graphVersion();
-			graph  = new PersistentGraph(name, path, version);
+			Integer version = utils.Functions.graphLastVersion(path, prefix);
+			graph  = new PersistentGraph(prefix, path, version);
 			server = new TweetRanker(graph);
 			Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownThread(server, graph)));
 		} catch (Throwable e) {
