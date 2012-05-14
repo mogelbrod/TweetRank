@@ -5,6 +5,6 @@
 \contentsline {section}{\numberline {4}Implementation}{7}
 \contentsline {subsection}{\numberline {4.1}Overview}{7}
 \contentsline {subsection}{\numberline {4.2}TweetRank}{8}
-\contentsline {subsection}{\numberline {4.3}Solr - Incomplete!}{9}
+\contentsline {subsection}{\numberline {4.3}Solr}{9}
 \contentsline {section}{\numberline {5}Experiments}{9}
 \contentsline {section}{\numberline {6}Conclusion}{10}
