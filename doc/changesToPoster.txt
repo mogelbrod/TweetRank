@@ -1,9 +1,0 @@
-RANKER
-
-*) Uses the complete path Monte Carlo algorithm, stopping at dangling nodes
-*) Starts a walk from each node exactly 100 times
-*) Random path length -  20% chance  at each node that the “surfer” stops
-*) Ranker uses 10 threads to compute walks in parallel
-*) The final rank of each tweet is scaled to have a value between 0 and 10
-
-{6, 4, 3, 3} should be scaled to {10, 20/3, 5, 5} i the last stage of the picture.
