@@ -23,7 +23,7 @@ Solr 3.6 were used as the query interface for the TweetRank. It receives the Twe
 The TweetRank scores which are calculated at the ranker component which then prints the results as key value pairs in a plain text formatted file. This file is then used by Solr as an ''External file field'' which we combine with the other ranking attributes. The ranking attributes that we base our weighting on are the following:
 
 \begin{itemize}
-	\item \textbf{Hashtag} - If any hashtags are mentioned in the tweet $T$ for the query $Q$, we give additional score to $T$ for the query $Q$.
+	\item \textbf{Hashtag} - If a hashtag $H$ is mentioned in the tweet $T$ and found in the query $Q$, we give additional score to $T$ for the query $Q$.
 	\item \textbf{Username} - If the username of the author of tweet $T$ is found in query $Q$, we give additional score to $T$ for the query $Q$.
 \end{itemize}
 
