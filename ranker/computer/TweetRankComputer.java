@@ -75,7 +75,7 @@ public class TweetRankComputer {
 			this.graph = graph;
 
 			// Determine the path length to be used
-			M = graph.getNumberOfTweets()/100;
+			M = graph.getTweetList().size()/100;
 			if (M < 100) M = 100;
 
 			// Start computation!
@@ -234,7 +234,7 @@ public class TweetRankComputer {
 	 * Otherwise returns 0.
 	 */
 	public double getExpectedPercentageOfCompletion() {
-		if ( state == State.IDLE ) return 0.0;
+		/*if ( state == State.IDLE ) return 0.0;
 
 		double expected_length = 1/ComputationTask.BORED_PROBABILITY; // Expected length
 		double dev_length = Math.sqrt(3.0)/6.0;// Standard deviation in the length
@@ -248,7 +248,8 @@ public class TweetRankComputer {
 		while(CurrentVisits > ExpectedVisits)
 			ExpectedVisits += dev_length;
 
-		return CurrentVisits/ExpectedVisits;
+		return CurrentVisits/ExpectedVisits;*/
+		return 0.0;
 	}
 
 	/**

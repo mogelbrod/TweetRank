@@ -63,9 +63,7 @@ Note that $HP_{i,j,k}$ will be greater than zero if, and only if, both $i$ and $
 
 Then, $H_{i,j}$ is defined as:
 \begin{equation}
-H_{i,j} = \frac{\sum^{|HS|}_{k} HP_{i,j,k}}{ \sum^{|T|}_j \sum^{|HS|}_{k} HP_{i,j,k}}
+H_{i,j} = \sum_{k \in HS} HP_{i,j,k}
 \end{equation}
-
-The previous equation might be complex but note that the numerator is just the sum of the third-dimension of the $HP$ matrix, for a given pair of tweets $i, j$, and the denominator is the normalization term, so that row $i$ in matrix $H$ sums 1.
 
 \input{weighted_tweetrank}
