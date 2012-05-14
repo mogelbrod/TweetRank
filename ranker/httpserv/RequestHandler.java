@@ -218,7 +218,7 @@ public class RequestHandler implements HttpHandler {
 						graph.addRefTweets(id, refLongIDs.get(0));
 					} else if (type == Type.FOLLOWING) {
 						logger.debug("ADD " + type + ": "+ id + " " + refLongIDs);
-						graph.addFollows(id, refLongIDs);
+						graph.addFriends(id, refLongIDs);
 					} else if (type == Type.MENTION) {
 						logger.debug("ADD " + type + ": "+ id + " " + refLongIDs);
 						graph.addMentioned(id, refLongIDs);
@@ -255,7 +255,7 @@ public class RequestHandler implements HttpHandler {
 			"Number of users: " + graph.getNumberOfUsers() + "\n" +
 			"Number of hashtags: " + graph.getNumberOfHashtags() + "\n" +
 			"Average tweets per user: " + graph.getAverageTweetsPerUser() + "\n" +
-			"Average effective friends per user: " + graph.getAverageEffectiveFriendsPerUser() + "\n" +
+			"Average effective friends per user: " + graph.getAverageFriendsPerUser() + "\n" +
 			"Average references per tweet: " + graph.getAverageReferencePerTweet() + "\n" +
 			"Average mentions per tweet: " + graph.getAverageMentionsPerTweet() + "\n" +
 			"Average hashtags per tweet: " + graph.getAverageHashtagsPerTweet() + "\n\n";
@@ -273,7 +273,7 @@ public class RequestHandler implements HttpHandler {
 				"Number of users: " + trcomputer.getTemporaryGraph().getNumberOfUsers() + "\n" +
 				"Number of hashtags: " + trcomputer.getTemporaryGraph().getNumberOfHashtags() + "\n" +
 				"Average tweets per user: " + trcomputer.getTemporaryGraph().getAverageTweetsPerUser() + "\n" +
-				"Average effective friends per user: " + trcomputer.getTemporaryGraph().getAverageEffectiveFriendsPerUser() + "\n" +
+				"Average effective friends per user: " + trcomputer.getTemporaryGraph().getAverageFriendsPerUser() + "\n" +
 				"Average references per tweet: " + trcomputer.getTemporaryGraph().getAverageReferencePerTweet() + "\n" +
 				"Average mentions per tweet: " + trcomputer.getTemporaryGraph().getAverageMentionsPerTweet() + "\n" +
 				"Average hashtags per tweet: " + trcomputer.getTemporaryGraph().getAverageHashtagsPerTweet() + "\n\n";
