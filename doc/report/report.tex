@@ -12,6 +12,20 @@
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{subfigure}
+\usepackage{fancyhdr}
+\setlength{\headheight}{17.0pt}
+\setlength{\headsep}{5.0pt}
+\pagestyle{fancy}
+
+\fancyhf{}
+ 
+\setlength{\headsep}{16pt}
+\setlength{\headheight}{19pt}
+\lhead{\sf \scriptsize V. Hallberg, A. Hjalmarsson, J. Puigcerver, \\C. Rydberg and J. Stjernberg}
+\chead{\sf \scriptsize Information Retrieval: \\ TweetRank - PageRank for Twitter}
+\rhead{\sf \scriptsize DD2476  \\ \today}
+\cfoot{\large \thepage}
+
 
 \renewcommand{\algorithmicrequire}{\textbf{Input:}}
 \renewcommand{\algorithmicensure}{\textbf{Output:}}
@@ -22,13 +36,17 @@
 
 \begin{document}
 \maketitle
-\noindent
 \begin{abstract}
+\noindent
 PageRank is an algorithm presented by Larry Page and Sergey Brin that allows to estimate the importance of a web page using the hyperlinks among them. This algorithm was originally the core of Google's search engine and proved to work very well in the web structure. Our task was to adapt the PageRank to work in the world of Twitter, instead of the web. This document presents the mathematical basis to compute, what we called, the \emph{TweetRank}, an algorithm to compute an approximation to \emph{TweetRank} based on Monte Carlo methods, and a simple search engine designed as a demonstration of our work.
 \end{abstract}
 %\\ \\ \\
 
-%\tableofcontents  % They want this report as an article, so no TOC. Look at the description on ir12/projekt
+\newpage
+
+\tableofcontents  
+
+\newpage
 
 \input{intro}
 \input{twitter_concepts}
@@ -37,6 +55,7 @@ PageRank is an algorithm presented by Larry Page and Sergey Brin that allows to 
 \input{experiments}
 \input{summary}
 
+\newpage
 
 \bibliographystyle{abbrv}
 \bibliography{bibliography}
