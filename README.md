@@ -10,5 +10,5 @@ Authors
 * Victor Hallberg <<victorha@kth.se>>
 * Johan Stjernberg <<stjer@kth.se>>
 * Joan Puigcerver I Perez <<joanpip@kth.se>>
-* Alexander Hjalmarsson <<hjalle@sgh.se>>
+* Alexander Hjalmarsson <<alehja@kth.se>>
 * Christoffer Rydberg <<chrryd@kth.se>>
