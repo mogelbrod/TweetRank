@@ -115,7 +115,7 @@ public class TweetRankComputer {
 				completed_results.add(result.get());
 			
 			// Merge results
-			tweetrank = MergeAndNormalizeCounters(completed_results, 0L, 10L);
+			tweetrank = MergeAndNormalizeCounters(completed_results, 10L);
 		} catch (InterruptedException e) {
 			logger.error("Worker interruped while computing TweetRank.", e);
 		} catch (ExecutionException e) {
@@ -138,7 +138,7 @@ public class TweetRankComputer {
 	 * @param visitCounters Collection of counters to merge and normalize.
 	 * @return Returns a merged and normalized HashMap, so that the sum of all values is 1.0.
 	 */
-	private static TreeMap<Long,Double> MergeAndNormalizeCounters(Collection<HashMap<Long,Long>> visitCounters, Long MinRange, Long MaxRange) 
+	private static TreeMap<Long,Double> MergeAndNormalizeCounters(Collection<HashMap<Long,Long>> visitCounters, Long MaxRange) 
 	{
 		// Merge all the counters
 		TreeMap<Long,Long> merge = new TreeMap<Long,Long>();
@@ -159,7 +159,8 @@ public class TweetRankComputer {
 		}
 
 
-		logger.debug("min=" + min.toString() + ", max=" + max.toString() + ", minRange=" + MinRange.toString() + ", maxRange=" + MaxRange.toString());
+		logger.debug("min=" + min.toString() + ", max=" + max.toString() + ", maxRange=" + MaxRange.toString());
+		//logger.debug("min=" + min.toString() + ", max=" + max.toString() + ", minRange=" + MinRange.toString() + ", maxRange=" + MaxRange.toString());
 
 		// Normalize the counters
 		TreeMap<Long,Double> norm = new TreeMap<Long,Double>();
