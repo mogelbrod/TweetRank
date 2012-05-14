@@ -16,7 +16,6 @@ public class PersistentGraph extends Graph <HashSet<Long>, HashSet<String>>{
 
 	private boolean modified_graph;
 
-
 	@SuppressWarnings("unchecked")
 	public PersistentGraph(String path, String prefix, Integer version) {
 		lockAll();
@@ -242,8 +241,8 @@ public class PersistentGraph extends Graph <HashSet<Long>, HashSet<String>>{
 		TemporaryGraph tempGraph = null;
 		lockAll();
 		try {		
-			HashMap<Long, Long> tTweetSet = tweets;
-			HashMap<Long, Long> tRefTweets = new HashMap<Long,Long>(references);
+			HashMap<Long, Long> tTweetSet = filterActiveTweets(tweets);
+			HashMap<Long, Long> tRefTweets = filterActiveReferences(references);
 			HashMap<Long, ArrayList<Long>> tUserTweets = utils.Functions.MapOfSetsToMapOfLists(tweetsByUser);
 			HashMap<Long, ArrayList<Long>> tMentioned = utils.Functions.MapOfSetsToMapOfLists(filterActiveMentionship(mentions, tweetsByUser));
 			HashMap<Long, ArrayList<Long>> tFollows = utils.Functions.MapOfSetsToMapOfLists(filterActiveFriendship(friends, tweetsByUser));

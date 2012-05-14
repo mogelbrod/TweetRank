@@ -72,6 +72,15 @@ public abstract class Graph <LongCollection extends Collection<Long>, StringColl
 		}
 		return activeTweets;
 	}
+	
+	protected HashMap<Long, Long> filterActiveReferences(HashMap<Long,Long> references) {
+		HashMap<Long,Long> activeReferences = new HashMap<Long,Long>();
+		for(Map.Entry<Long, Long> e : references.entrySet()) {
+			if (hasKnownAuthor(e.getKey()) && hasKnownAuthor(e.getValue()))
+				activeReferences.put(e.getKey(), e.getValue());
+		}
+		return activeReferences;
+	}
 
 	public boolean hasKnownAuthor(Long tweet) {
 		return (tweets.get(tweet) != null && tweets.get(tweet).compareTo(0L) >= 0);

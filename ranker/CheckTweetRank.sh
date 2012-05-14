@@ -1,5 +1,5 @@
 #!/bin/bash
-
+LANG=C;
 awk -F= 'BEGIN{s=0.0;m=1E10;M=0.0}
 {
  s += $2; 

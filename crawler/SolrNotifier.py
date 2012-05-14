@@ -43,10 +43,10 @@ class SolrNotifier:
                     trycommit = True
                     time.sleep(2)
                 else:
-                    if self.logger is not None: self.logger.exception('')
+                    if self.logger is not None: self.logger.exception('Uncommited tweets:' + tweets)
                     trycommit = False
             except Exception as ex:
-                if self.logger is not None: self.logger.exception('')
+                if self.logger is not None: self.logger.exception('Uncommited tweets:' + tweets)
                 trycommit = False
 
         conn.close()

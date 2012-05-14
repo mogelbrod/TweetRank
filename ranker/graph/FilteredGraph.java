@@ -14,6 +14,7 @@ public class FilteredGraph extends Graph<HashSet<Long>, HashSet<String>> {
 	public FilteredGraph(String path, String prefix, Integer version) throws Throwable {
 		tweets = (HashMap<Long, Long>)utils.Functions.loadObject(path, prefix + "__TweetSet-" + version);
 		if ( tweets == null ) throw new FileNotFoundException("File \"" + prefix + "__TweetSet-" + version + "\" not found!");
+		tweets = filterActiveTweets(tweets);
 		tweetsList = new ArrayList<Long>(tweets.keySet());
 		
 		tweetsByUser  = (HashMap<Long, HashSet<Long>>)utils.Functions.loadObject(path, prefix + "__UserTweets-" + version);
@@ -29,6 +30,7 @@ public class FilteredGraph extends Graph<HashSet<Long>, HashSet<String>> {
 
 		references  = (HashMap<Long, Long>)utils.Functions.loadObject(path, prefix + "__RefTweets-" + version);
 		if ( references == null ) throw new FileNotFoundException("File \"" + prefix + "__RefTweets-" + version + "\" not found!");
+		references = filterActiveReferences(references);
 
 		hashtagsByTweet  = (HashMap<Long, HashSet<String>>)utils.Functions.loadObject(path, prefix + "__HashtagsByTweet-" + version);
 		if ( hashtagsByTweet == null ) throw new FileNotFoundException("File \"" + prefix + "__HashtagsByTweet-" + version + "\" not found!");
