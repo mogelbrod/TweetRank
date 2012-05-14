@@ -164,6 +164,12 @@ public class TweetRankComputer {
 		// Normalize the counters
 		TreeMap<Long,Double> norm = new TreeMap<Long,Double>();
 
+		for(Entry<Long,Long> entry : merge.entrySet()) {
+			Double val = MaxRange * val/max;
+			logger.debug("id="+entry.getKey()+", oval=" + entry.getValue() + ", nval=" + val);
+			norm.put(entry.getKey(),  val);
+		}
+		/*
 		// Check if max and min are equal
 		if ( !max.equals(min) ) {
 			for(Entry<Long,Long> entry : merge.entrySet()) {
@@ -178,7 +184,7 @@ public class TweetRankComputer {
 				norm.put(entry.getKey(), val);
 			}
 		}
-
+		*/
 		return norm;
 	}
 
