@@ -4,7 +4,6 @@
 		<a class="time" href="http://twitter.com/#field('user_nick')/status/#field('id')">#field('created_at')</a>
 		<span class="hashtags">#linked_field('hashtag')</span>
 		<span class="score">#field('score')</span>
-		<span class="rank">#field('rank')</span>
 	</div>
 	<p class="text">#field('text')</p>
 
