@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -63,7 +64,7 @@ public class TweetRankPowerIteration {
 		if ( !graph.hasHashtags(ti) || !graph.hasHashtags(tj) ) return 0.0;
 		HashSet<String> hti = graph.getHashtagsByTweet(ti);
 		HashSet<String> htj = graph.getHashtagsByTweet(tj);
-		HashSet<String> cht = utils.Functions.HashSetIntersection(hti,htj); // Common hashtags
+		Set<String> cht = utils.Functions.SetIntersection(hti,htj); // Common hashtags
 		double H = 0.0;
 		for ( String h : cht ) 
 			H += 1.0/(hti.size()*graph.getTweetsByHashtag(h).size());

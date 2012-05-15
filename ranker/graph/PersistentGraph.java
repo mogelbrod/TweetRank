@@ -16,30 +16,52 @@ public class PersistentGraph extends Graph <HashSet<Long>, HashSet<String>>{
 
 	private boolean modified_graph;
 
+
 	@SuppressWarnings("unchecked")
 	public PersistentGraph(String path, String prefix, Integer version) {
 		lockAll();
 		try {
 			tweets = (HashMap<Long, Long>)utils.Functions.loadObject(path, prefix + "__TweetSet-" + version);
-			if ( tweets == null ) tweets = new HashMap<Long,Long>();
+			if ( tweets == null ) {
+				logger.info("New file " + prefix + "__TweetSet-" + version + " used");
+				tweets = new HashMap<Long,Long>();
+			}
 
 			mentions  = (HashMap<Long, HashSet<Long>>)utils.Functions.loadObject(path, prefix + "__Mention-" + version);
-			if (mentions == null) mentions = new HashMap<Long, HashSet<Long>>();
+			if (mentions == null) {
+				logger.info("New file " + prefix + "__Mention-" + version + " used");
+				mentions = new HashMap<Long, HashSet<Long>>();
+			}
 
 			friends  = (HashMap<Long, HashSet<Long>>)utils.Functions.loadObject(path, prefix + "__Follows-" + version);
-			if (friends == null) friends = new HashMap<Long, HashSet<Long>>();
+			if (friends == null) {
+				logger.info("New file " + prefix + "__Follows-" + version + " used");
+				friends = new HashMap<Long, HashSet<Long>>();
+			}
 
 			references  = (HashMap<Long, Long>)utils.Functions.loadObject(path, prefix + "__RefTweets-" + version);
-			if (references == null) references = new HashMap<Long, Long>();
+			if (references == null) {
+				logger.info("New file " + prefix + "__RefTweets-" + version + " used");
+				references = new HashMap<Long, Long>();
+			}
 
 			tweetsByUser  = (HashMap<Long, HashSet<Long>>)utils.Functions.loadObject(path, prefix + "__UserTweets-" + version);
-			if (tweetsByUser == null) tweetsByUser = new HashMap<Long, HashSet<Long>>();		
-
+			if (tweetsByUser == null) {
+				logger.info("New file " + prefix + "__UserTweets-" + version + " used");
+				tweetsByUser = new HashMap<Long, HashSet<Long>>();
+			}
+			
 			hashtagsByTweet  = (HashMap<Long, HashSet<String>>)utils.Functions.loadObject(path, prefix + "__HashtagsByTweet-" + version);
-			if (hashtagsByTweet == null) hashtagsByTweet = new HashMap<Long, HashSet<String>>();	
+			if (hashtagsByTweet == null) {
+				logger.info("New file " + prefix + "__HashtagsByTweet-" + version + " used");
+				hashtagsByTweet = new HashMap<Long, HashSet<String>>();
+			}
 
 			tweetsByHashtag  = (HashMap<String, HashSet<Long>>)utils.Functions.loadObject(path, prefix + "__TweetsByHashtag-" + version);
-			if (tweetsByHashtag == null) { tweetsByHashtag = new HashMap<String, HashSet<Long>>(); }
+			if (tweetsByHashtag == null) {
+				logger.info("New file " + prefix + "__TweetsByHashtag-" + version + " used");
+				tweetsByHashtag = new HashMap<String, HashSet<Long>>();
+			}
 
 			modified_graph = false;
 		} catch (Throwable t) {
@@ -219,35 +241,23 @@ public class PersistentGraph extends Graph <HashSet<Long>, HashSet<String>>{
 		return avg;
 	}
 
-	@Override
-	public double getAverageActiveFriendsPerUser() {
-		HashMap<Long, HashSet<Long>> activeFriendship = filterActiveFriendship(friends, tweetsByUser);
-		long Tfriends = 0;
-		for(HashSet<Long> friends : activeFriendship.values() )
-			Tfriends += friends.size();
-		return (Tfriends > 0 ? Tfriends/(double)tweetsByUser.size() : 0.0);
-	}
-
-	@Override
-	public double getAverageActiveMentionsPerTweet() {
-		HashMap<Long, HashSet<Long>> activeMentionship = filterActiveMentionship(mentions, tweetsByUser);
-		long Tmentions = 0;
-		for(HashSet<Long> friends : activeMentionship.values() )
-			Tmentions += friends.size();
-		return (Tmentions > 0 ? Tmentions/(double)tweets.size() : 0.0);
-	}
-
 	public TemporaryGraph createTemporaryGraph () {
 		TemporaryGraph tempGraph = null;
 		lockAll();
-		try {		
+		try {
 			HashMap<Long, Long> tTweetSet = filterActiveTweets(tweets);
-			HashMap<Long, Long> tRefTweets = filterActiveReferences(references);
-			HashMap<Long, ArrayList<Long>> tUserTweets = utils.Functions.MapOfSetsToMapOfLists(tweetsByUser);
-			HashMap<Long, ArrayList<Long>> tMentioned = utils.Functions.MapOfSetsToMapOfLists(filterActiveMentionship(mentions, tweetsByUser));
-			HashMap<Long, ArrayList<Long>> tFollows = utils.Functions.MapOfSetsToMapOfLists(filterActiveFriendship(friends, tweetsByUser));
-			HashMap<Long, ArrayList<String>> tHashtagsByTweet = utils.Functions.MapOfSetsToMapOfLists(hashtagsByTweet);
-			HashMap<String, ArrayList<Long>> tTweetsByHashtag = utils.Functions.MapOfSetsToMapOfLists(tweetsByHashtag);
+			Set<Long> validTweets = tTweetSet.keySet();
+			
+			HashMap<Long, Long> tRefTweets = filterActiveReferences(references, tTweetSet.keySet());
+			
+			HashMap<Long, ArrayList<Long>> tUserTweets = utils.Functions.MapOfSetsToMapOfLists(filterActiveTweetsByUser(tweetsByUser,validTweets));
+			Set<Long> validUsers = tUserTweets.keySet();
+			
+			HashMap<Long, ArrayList<Long>> tMentioned = utils.Functions.MapOfSetsToMapOfLists(filterActiveMentionship(mentions, validUsers));
+			HashMap<Long, ArrayList<Long>> tFollows = utils.Functions.MapOfSetsToMapOfLists(filterActiveFriendship(friends, validUsers));
+			HashMap<String, ArrayList<Long>> tTweetsByHashtag = utils.Functions.MapOfSetsToMapOfLists(filterActiveTweetsByHashtag(tweetsByHashtag, validTweets));
+			HashMap<Long, ArrayList<String>> tHashtagsByTweet = utils.Functions.MapOfSetsToMapOfLists(filterActiveHashtagsByTweet(hashtagsByTweet, validTweets));
+			
 			tempGraph = new TemporaryGraph(tTweetSet, tRefTweets, tUserTweets, tMentioned, tFollows, tHashtagsByTweet, tTweetsByHashtag);
 		} catch ( Exception e ) {
 			logger.error("Error creating temporal graph.", e);
@@ -259,20 +269,25 @@ public class PersistentGraph extends Graph <HashSet<Long>, HashSet<String>>{
 	}
 
 	@Override
-	protected HashSet<Long> filterActiveFriends(HashSet<Long> friends, HashMap<Long, HashSet<Long>> tweetsByUser) {
+	protected HashSet<Long> filterActiveFriends(HashSet<Long> friends, Set<Long> validUsers) {
 		HashSet<Long> activeFriends = new HashSet<Long>();
 		for( Long friend : friends )
-			if ( tweetsByUser.get(friend) != null && tweetsByUser.get(friend).size() > 0 )
+			if ( validUsers.contains(friend) )
 				activeFriends.add(friend);
 		return activeFriends;
 	}
 
 	@Override
-	protected HashSet<Long> filterActiveMentions(HashSet<Long> mentions, HashMap<Long, HashSet<Long>> tweetsByUser) {
+	protected HashSet<Long> filterActiveMentions(HashSet<Long> mentions, Set<Long> validUsers) {
 		HashSet<Long> activeMentions = new HashSet<Long>();
 		for( Long user : mentions )
-			if ( tweetsByUser.get(user) != null && tweetsByUser.get(user).size() > 0 )
+			if ( validUsers.contains(user) )
 				activeMentions.add(user);
 		return activeMentions;
+	}
+
+	@Override
+	protected HashSet<Long> filterTweetsCollection(HashSet<Long> tweets, Set<Long> validTweets) {
+		return utils.Functions.SetIntersection(tweets, validTweets);
 	}
 }

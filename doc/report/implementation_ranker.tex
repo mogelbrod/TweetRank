@@ -54,4 +54,4 @@ Given that $|T| \times M$ must be $O(|T|^ 2)$ to ensure a good approximation of 
 O(|T| \times M \times \mathbb{E}[|w|]) = O(|T|^2 \times \frac{1}{\alpha}) = O(|T|^2)
 \end{equation}
 
-Note that equation \ref{eq:running_time} is an upper bound on the expected running time if the graph contains dangling nodes. On the other side, the assumption of random access memory might be a problem for a large index which does not fit in the main memory of a single machine. However, implementing TweetRank on a large-scale distributed system is not the approach of this work and we will maintain this assumption to keep the analysis simple.
+Note that equation \ref{eq:running_time} is an upper bound on the expected running time if the graph contains dangling nodes. On the other side, the assumption of random access memory might be a problem for a large index which does not fit in the main memory of a single machine. However, implementing TweetRank on a large-scale distributed system is not the approach of this work and we will made this assumption to keep the analysis simple.
