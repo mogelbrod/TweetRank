@@ -24,9 +24,9 @@ public class TweetRanker {
 
 	private static String prefix = "graph";
 	private static String path = "../data/graph/";
-	//private static String RankingName = "../data/tweetrank.tr";
-	private static String RankingName = "/home/ir12/apache-solr-3.6.0/example/solr/data/external_rank";
-	private static long RankingPeriod = MinToMilli(120);  
+	private static String RankingName = "../data/tweetrank.tr";
+	//private static String RankingName = "/home/ir12/apache-solr-3.6.0/example/solr/data/external_rank";
+	private static long RankingPeriod = MinToMilli(120);
 	private static long StoringPeriod = MinToMilli(30);
 
 	private HttpServer server;
@@ -56,7 +56,7 @@ public class TweetRanker {
 			this.server.stop();
 			Integer version = utils.Functions.graphLastVersion(path, prefix) + 1;
 			this.graph.store(path, prefix, version);
-		}		
+		}
 	}
 
 	/** Periodic TweetRank computation task. */
@@ -76,9 +76,9 @@ public class TweetRanker {
 			try {
 				// Start computation!
 				TreeMap<Long,Double> pr = ranker.compute(graph.createTemporaryGraph());
-				
+
 				// If everything was OK, save the result on a file
-				if ( pr != null ) { 
+				if ( pr != null ) {
 					logger.info("Saving TweetRank file...");
 					PrintWriter pwriter = new PrintWriter(new FileWriter(RankingName));
 					for(Map.Entry<Long, Double> entry : pr.entrySet())
@@ -112,7 +112,7 @@ public class TweetRanker {
 
 	public void start() {
 		server.start();
-		rankerTimer.schedule(this.computask, RankingPeriod, RankingPeriod);
+		//rankerTimer.schedule(this.computask, RankingPeriod, RankingPeriod);
 		storeTimer.schedule(new PersistentStoreTask(), StoringPeriod, StoringPeriod);
 	}
 
@@ -127,9 +127,9 @@ public class TweetRanker {
 		BasicConfigurator.configure();
 		logger.setLevel(Level.INFO);
 
-		try {	
+		try {
 			Integer version = utils.Functions.graphLastVersion(path, prefix);
-			graph  = new PersistentGraph(prefix, path, version);
+			graph  = new PersistentGraph(path, prefix, version);
 			server = new TweetRanker(graph);
 			Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownThread(server, graph)));
 		} catch (Throwable e) {

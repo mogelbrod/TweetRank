@@ -20,7 +20,7 @@ def main(argv):
     # Logger configuration
     logging.basicConfig(format='[%(levelname)s] %(asctime)s %(module)s:%(funcName)s:%(lineno)d -> %(message)s')
     logger = logging.getLogger('DirectoryNotifier')
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
     # Create Services Notifier (Ranker & Solr notifier)
     notif = ServicesNotifier(logger)
@@ -38,12 +38,12 @@ def main(argv):
 
     files = listdir(data_dir)
 
-
     # Process users data
     for fname in files:
         user_id = int(fname.split('.')[0])
         ftype   = fname.split('.')[1]
         if fname in ignored: continue
+        fname = data_dir + fname
 
         if ftype == 'friends':
             logger.info('Friends file: %s' % fname)

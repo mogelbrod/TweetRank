@@ -255,7 +255,7 @@ public class RequestHandler implements HttpHandler {
 			"Number of users: " + graph.getNumberOfUsers() + "\n" +
 			"Number of hashtags: " + graph.getNumberOfHashtags() + "\n" +
 			"Average tweets per user: " + graph.getAverageTweetsPerUser() + "\n" +
-			"Average effective friends per user: " + graph.getAverageFriendsPerUser() + "\n" +
+			"Average friends per user: " + graph.getAverageFriendsPerUser() + "\n" +
 			"Average references per tweet: " + graph.getAverageReferencePerTweet() + "\n" +
 			"Average mentions per tweet: " + graph.getAverageMentionsPerTweet() + "\n" +
 			"Average hashtags per tweet: " + graph.getAverageHashtagsPerTweet() + "\n\n";
@@ -273,7 +273,7 @@ public class RequestHandler implements HttpHandler {
 				"Number of users: " + trcomputer.getTemporaryGraph().getNumberOfUsers() + "\n" +
 				"Number of hashtags: " + trcomputer.getTemporaryGraph().getNumberOfHashtags() + "\n" +
 				"Average tweets per user: " + trcomputer.getTemporaryGraph().getAverageTweetsPerUser() + "\n" +
-				"Average effective friends per user: " + trcomputer.getTemporaryGraph().getAverageFriendsPerUser() + "\n" +
+				"Average friends per user: " + trcomputer.getTemporaryGraph().getAverageFriendsPerUser() + "\n" +
 				"Average references per tweet: " + trcomputer.getTemporaryGraph().getAverageReferencePerTweet() + "\n" +
 				"Average mentions per tweet: " + trcomputer.getTemporaryGraph().getAverageMentionsPerTweet() + "\n" +
 				"Average hashtags per tweet: " + trcomputer.getTemporaryGraph().getAverageHashtagsPerTweet() + "\n\n";
@@ -282,10 +282,10 @@ public class RequestHandler implements HttpHandler {
 			}
 			
 			response += "Last computation: " + (enddate == null ? "Never" : Time.formatDate("yyyy/MM/dd HH:mm:ss", enddate)) + "\n";
-			if ( state == TweetRankComputer.State.WORKING ) {
+			/*if ( state == TweetRankComputer.State.WORKING ) {
 				response += "Approximate percentage of completion: " + trcomputer.getExpectedPercentageOfCompletion()*100 + "\n" +
 				"Approximate remaining time: " + trcomputer.getExpectedRemainingTime() + "\n";
-			}
+			}*/
 			if ( elapsed != null )	response += "Elapsed time: " + elapsed;
 
 

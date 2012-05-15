@@ -79,7 +79,6 @@ class TwitterCrawler:
                     escaped_xml = EscapeXMLIllegalCharEntities(xmldata)
                     self.backup.store_tweets(user_id, escaped_xml)
                     xml.sax.parseString(escaped_xml, TweetArrayParser(lambda tw: tweet_callback(tw, result, tw_counter)))
-                    print tw_counter[0]
                     if tw_counter[0] == 0 or page == maxpages: return result # OK
                     else: page = page + 1      # Next page
 

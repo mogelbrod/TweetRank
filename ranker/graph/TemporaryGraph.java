@@ -29,31 +29,35 @@ public class TemporaryGraph extends Graph <ArrayList<Long>, ArrayList<String>> {
 		return tweetList;
 	}
 
-	@Override
 	public double getAverageActiveFriendsPerUser() {
 		return getAverageFriendsPerUser();
 	}
 
-	@Override
 	public double getAverageActiveMentionsPerTweet() {
 		return getAverageMentionsPerTweet();
 	}
 
 	@Override
-	protected ArrayList<Long> filterActiveFriends(ArrayList<Long> friends, HashMap<Long, ArrayList<Long>> tweetsByUser) {
+	protected ArrayList<Long> filterActiveFriends(ArrayList<Long> friends, Set<Long> validUsers) {
 		ArrayList<Long> activeFriends = new ArrayList<Long>();
 		for( Long friend : friends )
-			if ( tweetsByUser.get(friend) != null && tweetsByUser.get(friend).size() > 0 )
+			if ( validUsers.contains(friend) )
 				activeFriends.add(friend);
 		return activeFriends;
 	}
 
 	@Override
-	protected ArrayList<Long> filterActiveMentions(ArrayList<Long> mentions, HashMap<Long, ArrayList<Long>> tweetsByUser) {
+	protected ArrayList<Long> filterActiveMentions(ArrayList<Long> mentions, Set<Long> validUsers) {
 		ArrayList<Long> activeMentions = new ArrayList<Long>();
 		for( Long user : mentions )
-			if ( tweetsByUser.get(user) != null && tweetsByUser.get(user).size() > 0 )
+			if ( validUsers.contains(user) )
 				activeMentions.add(user);
 		return activeMentions;
+	}
+
+	@Override
+	protected ArrayList<Long> filterTweetsCollection(ArrayList<Long> tweets, Set<Long> validTweets) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

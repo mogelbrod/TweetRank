@@ -12,7 +12,7 @@ public class FilteredGraph extends Graph<HashSet<Long>, HashSet<String>> {
 
 	@SuppressWarnings("unchecked")
 	public FilteredGraph(String path, String prefix, Integer version) throws Throwable {
-		tweets = (HashMap<Long, Long>)utils.Functions.loadObject(path, prefix + "__TweetSet-" + version);
+		/*tweets = (HashMap<Long, Long>)utils.Functions.loadObject(path, prefix + "__TweetSet-" + version);
 		if ( tweets == null ) throw new FileNotFoundException("File \"" + prefix + "__TweetSet-" + version + "\" not found!");
 		tweets = filterActiveTweets(tweets);
 		tweetsList = new ArrayList<Long>(tweets.keySet());
@@ -36,33 +36,23 @@ public class FilteredGraph extends Graph<HashSet<Long>, HashSet<String>> {
 		if ( hashtagsByTweet == null ) throw new FileNotFoundException("File \"" + prefix + "__HashtagsByTweet-" + version + "\" not found!");
 
 		tweetsByHashtag  = (HashMap<String, HashSet<Long>>)utils.Functions.loadObject(path, prefix + "__TweetsByHashtag-" + version);
-		if ( tweetsByHashtag == null ) throw new FileNotFoundException("File \"" + prefix + "__TweetsByHashtag-" + version + "\" not found!");
+		if ( tweetsByHashtag == null ) throw new FileNotFoundException("File \"" + prefix + "__TweetsByHashtag-" + version + "\" not found!");*/
 	}
 
 	@Override
-	public double getAverageActiveFriendsPerUser() {
-		return getAverageFriendsPerUser();
-	}
-
-	@Override
-	public double getAverageActiveMentionsPerTweet() {
-		return getAverageMentionsPerTweet();
-	}
-
-	@Override
-	protected HashSet<Long> filterActiveFriends(HashSet<Long> friends, HashMap<Long, HashSet<Long>> tweetsByUser) {
+	protected HashSet<Long> filterActiveFriends(HashSet<Long> friends, Set<Long> validUsers) {
 		HashSet<Long> activeFriends = new HashSet<Long>();
 		for( Long friend : friends )
-			if ( tweetsByUser.get(friend) != null && tweetsByUser.get(friend).size() > 0 )
+			if(validUsers.contains(friend))
 				activeFriends.add(friend);
 		return activeFriends;
 	}
 
 	@Override
-	protected HashSet<Long> filterActiveMentions(HashSet<Long> mentions, HashMap<Long, HashSet<Long>> tweetsByUser) {
+	protected HashSet<Long> filterActiveMentions(HashSet<Long> mentions, Set<Long> validUsers) {
 		HashSet<Long> activeMentions = new HashSet<Long>();
 		for( Long user : mentions )
-			if ( tweetsByUser.get(user) != null && tweetsByUser.get(user).size() > 0 )
+			if(validUsers.contains(user))
 				activeMentions.add(user);
 		return activeMentions;
 	}
@@ -73,5 +63,10 @@ public class FilteredGraph extends Graph<HashSet<Long>, HashSet<String>> {
 
 	public List<Long> getTweetsList() {
 		return tweetsList;
-	}	
+	}
+
+	@Override
+	protected HashSet<Long> filterTweetsCollection(HashSet<Long> tweets, Set<Long> validTweets) {
+		return utils.Functions.SetIntersection(tweets, validTweets);
+	}
 }
