@@ -189,10 +189,11 @@ public class TweetRankPowerIteration {
 		logger.setLevel(Level.INFO);
 
 		FilteredGraph graph = new FilteredGraph(path, prefix, version);
+		System.out.println(graph.percentageTweetsWithHashtag());
+		/*
 		TweetRankPowerIteration pi = new TweetRankPowerIteration(graph);
 		Map<Long,Double> pr = pi.Compute(1E-6);
 		for(Map.Entry<Long, Double> e : pr.entrySet())
-			System.out.println(e.getKey() + "=" + e.getValue());
-		return;
+			System.out.println(e.getKey() + "=" + e.getValue());*/
 	}
 }

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class FilteredGraph extends Graph<HashSet<Long>, HashSet<String>> {
@@ -12,31 +13,34 @@ public class FilteredGraph extends Graph<HashSet<Long>, HashSet<String>> {
 
 	@SuppressWarnings("unchecked")
 	public FilteredGraph(String path, String prefix, Integer version) throws Throwable {
-		/*tweets = (HashMap<Long, Long>)utils.Functions.loadObject(path, prefix + "__TweetSet-" + version);
+		tweets = (HashMap<Long, Long>)utils.Functions.loadObject(path, prefix + "__TweetSet-" + version);
 		if ( tweets == null ) throw new FileNotFoundException("File \"" + prefix + "__TweetSet-" + version + "\" not found!");
 		tweets = filterActiveTweets(tweets);
 		tweetsList = new ArrayList<Long>(tweets.keySet());
 		
 		tweetsByUser  = (HashMap<Long, HashSet<Long>>)utils.Functions.loadObject(path, prefix + "__UserTweets-" + version);
-		if ( tweetsByUser == null ) throw new FileNotFoundException("File \"" + prefix + "__UserTweets-" + version + "\" not found!");		
+		if ( tweetsByUser == null ) throw new FileNotFoundException("File \"" + prefix + "__UserTweets-" + version + "\" not found!");
+		tweetsByUser = filterActiveTweetsByUser(tweetsByUser, tweets.keySet());
+		
+		references  = (HashMap<Long, Long>)utils.Functions.loadObject(path, prefix + "__RefTweets-" + version);
+		if ( references == null ) throw new FileNotFoundException("File \"" + prefix + "__RefTweets-" + version + "\" not found!");
+		references = filterActiveReferences(references, tweets.keySet());		
 
 		mentions  = (HashMap<Long, HashSet<Long>>)utils.Functions.loadObject(path, prefix + "__Mention-" + version);
 		if ( mentions == null ) throw new FileNotFoundException("File \"" + prefix + "__TweetSet-" + version + "\" not found!");
-		mentions = filterActiveMentionship(mentions, tweetsByUser);
+		mentions = filterActiveMentionship(mentions, tweetsByUser.keySet());
 
 		friends  = (HashMap<Long, HashSet<Long>>)utils.Functions.loadObject(path, prefix + "__Follows-" + version);
 		if ( friends == null ) throw new FileNotFoundException("File \"" + prefix + "__TweetSet-" + version + "\" not found!");
-		friends = filterActiveFriendship(friends, tweetsByUser);
-
-		references  = (HashMap<Long, Long>)utils.Functions.loadObject(path, prefix + "__RefTweets-" + version);
-		if ( references == null ) throw new FileNotFoundException("File \"" + prefix + "__RefTweets-" + version + "\" not found!");
-		references = filterActiveReferences(references);
+		friends = filterActiveFriendship(friends, tweetsByUser.keySet());
 
 		hashtagsByTweet  = (HashMap<Long, HashSet<String>>)utils.Functions.loadObject(path, prefix + "__HashtagsByTweet-" + version);
 		if ( hashtagsByTweet == null ) throw new FileNotFoundException("File \"" + prefix + "__HashtagsByTweet-" + version + "\" not found!");
+		hashtagsByTweet = filterActiveHashtagsByTweet(hashtagsByTweet, tweets.keySet());
 
 		tweetsByHashtag  = (HashMap<String, HashSet<Long>>)utils.Functions.loadObject(path, prefix + "__TweetsByHashtag-" + version);
-		if ( tweetsByHashtag == null ) throw new FileNotFoundException("File \"" + prefix + "__TweetsByHashtag-" + version + "\" not found!");*/
+		if ( tweetsByHashtag == null ) throw new FileNotFoundException("File \"" + prefix + "__TweetsByHashtag-" + version + "\" not found!");
+		tweetsByHashtag = filterActiveTweetsByHashtag(tweetsByHashtag, tweets.keySet());
 	}
 
 	@Override
@@ -68,5 +72,13 @@ public class FilteredGraph extends Graph<HashSet<Long>, HashSet<String>> {
 	@Override
 	protected HashSet<Long> filterTweetsCollection(HashSet<Long> tweets, Set<Long> validTweets) {
 		return utils.Functions.SetIntersection(tweets, validTweets);
+	}
+	
+	public double percentageTweetsWithHashtag() {
+		int TT = 0;
+		for( Map.Entry<Long, HashSet<String>> e : hashtagsByTweet.entrySet() ) {
+			if ( e.getValue().size() > 0 ) TT++;
+		}
+		return TT/(double)tweets.size();
 	}
 }
