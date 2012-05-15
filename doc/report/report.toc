@@ -1,10 +1,10 @@
-\contentsline {section}{\numberline {1}Introduction}{3}
-\contentsline {section}{\numberline {2}Twitter concepts}{3}
-\contentsline {section}{\numberline {3}TweetRank definition}{4}
-\contentsline {subsection}{\numberline {3.1}Weighting using \emph {hashtags}}{6}
-\contentsline {section}{\numberline {4}Implementation}{7}
-\contentsline {subsection}{\numberline {4.1}Overview}{7}
-\contentsline {subsection}{\numberline {4.2}TweetRank}{8}
-\contentsline {subsection}{\numberline {4.3}Solr}{9}
-\contentsline {section}{\numberline {5}Experiments}{9}
-\contentsline {section}{\numberline {6}Conclusion}{10}
+\contentsline {section}{\numberline {1}Introduction}{3}{section.1}
+\contentsline {section}{\numberline {2}Twitter concepts}{3}{section.2}
+\contentsline {section}{\numberline {3}TweetRank definition}{4}{section.3}
+\contentsline {subsection}{\numberline {3.1}Weighting using \emph {hashtags}}{6}{subsection.3.1}
+\contentsline {section}{\numberline {4}Implementation}{7}{section.4}
+\contentsline {subsection}{\numberline {4.1}Overview}{7}{subsection.4.1}
+\contentsline {subsection}{\numberline {4.2}TweetRank}{8}{subsection.4.2}
+\contentsline {subsection}{\numberline {4.3}Solr}{9}{subsection.4.3}
+\contentsline {section}{\numberline {5}Experiments}{9}{section.5}
+\contentsline {section}{\numberline {6}Conclusion}{10}{section.6}

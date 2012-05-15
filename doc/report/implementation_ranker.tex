@@ -1,5 +1,5 @@
 \subsection{TweetRank}\label{sec:tweetrank_implementation}
-Algorithm \ref{algo:alg1} is used to compute the TweetRank score and it is an adaptation of the classic Monte Carlo complete path stopping at dangling nodes method. The graph from Twitter $G$ is just the set of relationships described in section \ref{sec:tweetrank_definition}. Algorith \ref{algo:alg1} includes some predefined functions that are not described here, however we thought that their name is descriptive enough.
+Algorithm \ref{algo:alg1} is used to compute the TweetRank score and it is an adaptation of the classic Monte Carlo complete path stopping at dangling nodes method. The graph from Twitter $G$ is just the set of relationships described in section \ref{sec:tweetrank_definition}. Algorith \ref{algo:alg1} includes some predefined functions that are not described here, but have very descriptive names.
 
 \begin{algorithm}
 \caption{Compute TweetRank using MC complete path stopping at dangling nodes}
@@ -43,7 +43,7 @@ Algorithm \ref{algo:alg1} is used to compute the TweetRank score and it is an ad
 \end{algorithmic}}
 \end{algorithm}
 
-Observe that the running time of algorithm \ref{algo:alg1} is non-deterministic, since it depends on the structure of the graph itself and the $\alpha$ parameter. Assuming random access memory, and no dangling nodes in graph, the previous algorithm has an expected running time bounded by $O(|T| \times M \times \mathbb{E}[|w|])$, where $\mathbb{E}[|w|]$ is the expected length of the random walk. The expected length of the random walk is obtained from the following
+Observe that the running time of algorithm \ref{algo:alg1} is non-deterministic, since it depends on the structure of the graph itself and the $\alpha$ parameter. Assuming random access memory, and no dangling nodes in the graph, the previous algorithm has an expected running time bounded by $O(|T| \times M \times \mathbb{E}[|w|])$, where $\mathbb{E}[|w|]$ is the expected length of the random walk. The expected length of the random walk is obtained from the following
 equation:
 \begin{equation}
 \mathbb{E}[|w|] = \sum_{k=1}^{\infty} P(|w| = k) \cdot k = \sum_{k=1}^{\infty} (1 - \alpha)^{k-1} \cdot \alpha \cdot k = \frac{1}{\alpha}
@@ -54,4 +54,4 @@ Given that $|T| \times M$ must be $O(|T|^ 2)$ to ensure a good approximation of 
 O(|T| \times M \times \mathbb{E}[|w|]) = O(|T|^2 \times \frac{1}{\alpha}) = O(|T|^2)
 \end{equation}
 
-Note that equation \ref{eq:running_time} is an upper bound on the expected running time if the graph contains dangling nodes. On the other side, the assumption of random access memory might be a problem for a large index which does not fit in the main memory of a single machine. However, implementing TweetRank on a large-scale distributed system is not the approach of this work and we will made this assumption to keep the analysis simple.
+Note that equation \ref{eq:running_time} is an upper bound on the expected running time if the graph contains dangling nodes. On the other hand, the assumption of random access memory might be a problem for a large index which does not fit in the main memory of a single machine. However, implementing TweetRank on a large-scale distributed system is not the approach of this work and we will made this assumption to keep the analysis simple.
