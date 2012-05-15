@@ -5,7 +5,7 @@ from tornado.httpclient import AsyncHTTPClient, HTTPClient, HTTPError, HTTPReque
 from tornado.ioloop import IOLoop
 
 class RankerNotifier:
-    def __init__(self, host = "localhost", max_clients=100, port = 4711, logger = None):
+    def __init__(self, host = 'localhost', max_clients=100, port = 4711, logger = None):
         AsyncHTTPClient.configure("tornado.curl_httpclient.CurlAsyncHTTPClient")
         self.http_client = AsyncHTTPClient(max_clients=max_clients)
         self.host = host
@@ -75,6 +75,7 @@ class RankerNotifier:
         self.notify_tweets([tweet])
 
     def notify_tweets(self, tweets):
+        if self.logger is not None: self.logger.debug('Sending files to Ranker...')
         for tweet in tweets:
             if tweet.retweeted_status is not None:
                 self.add_retweet(tweet.id, tweet.retweeted_status.id)
@@ -91,3 +92,4 @@ class RankerNotifier:
             self.add_user_tweets(tweet.user.id, [tweet.id])
 
         self._sendRequest()
+        if self.logger is not None: self.logger.debug('Ranker received files!')

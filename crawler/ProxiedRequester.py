@@ -11,7 +11,7 @@ class ProxiedRequester:
     class ProxyEntry:
         def __init__(self, address, port, ok_reqs=0, tot_reqs=0, rhits=0, rtime=0):
             self.trlock   = Lock()
-            self.orlock   = Lock()            
+            self.orlock   = Lock()
             self.tllock   = Lock()
             self.address  = address
             self.port     = port
@@ -19,10 +19,10 @@ class ProxiedRequester:
             self.rtime    = rtime
             self.ok_reqs  = ok_reqs
             self.tot_reqs = tot_reqs
-        
+
         def __eq__(self, other):
             return (self.address == other.address and self.port == other.port)
-        
+
         def __str__(self):
             if self.rhits is not None and self.rtime is not None:
                 return '%s %d %d %d %d %d' % (self.address, self.port, self.ok_reqs, self.tot_reqs, self.rhits, self.rtime)
@@ -68,9 +68,8 @@ class ProxiedRequester:
 
             if status == 200:
                 self._increment_ok_requests()
-            
             return status, data
-            
+
     def __init__(self, proxy_file):
         self.pflock = Lock()    # Lock for I/O operations on proxy_file
         self.cplock = Lock()    # Lock for current_proxy pointer
@@ -87,7 +86,6 @@ class ProxiedRequester:
         self.pflock.acquire()
         try:
             f = open(self.proxy_file, 'r')
-            
             for l in f:
                 l = l.strip()
                 if l[0] == '#': continue   # skip comments
@@ -96,7 +94,7 @@ class ProxiedRequester:
                 if len(l) < 2: continue
                 server, port, ok_reqs, tot_reqs, rhits, rtime = l[0], int(l[1]), 0, 0, None, None
 
-                if len(l) >= 4: 
+                if len(l) >= 4:
                     ok_reqs, tot_reqs = int(l[2]), int(l[3])
 
                 if len(l) >= 6:
@@ -105,7 +103,6 @@ class ProxiedRequester:
                 self.proxies.append(self.ProxyEntry(server, port, ok_reqs, tot_reqs, rhits, rtime))
 
             self.curr_proxy = randint(0, len(self.proxies)-1)
-
             f.close()
         finally:
             self.pflock.release()
@@ -137,7 +134,7 @@ class ProxiedRequester:
         cp = int(self.curr_proxy)
         self.cplock.release()
         return cp
-        
+
     def request(self, url):
         tried_proxies = 0
         cp = self._get_current_proxy()
@@ -149,14 +146,14 @@ class ProxiedRequester:
                 tried_proxies = tried_proxies + 1
                 cp = self._get_next_proxy(cp)
                 continue
-            
+
             print('Requesting %s on %s:%d...' % (url, proxy.address, proxy.port))
 
             # Send query
             status, data = proxy.request(url)
 
             if proxy.rhits is not None and proxy.rtime is not None:
-                print('status=%d, rhits=%d, rtime=%d' % (status, proxy.rhits, proxy.rtime))                
+                print('status=%d, rhits=%d, rtime=%d' % (status, proxy.rhits, proxy.rtime))
             elif proxy.rhits is None and proxy.rtime is not None:
                 print('status=%d, rhits=None, rtime=%d' % (status, proxy.rtime))
             elif proxy.rhits is not None and proxy.rtime is None:
@@ -174,18 +171,17 @@ class ProxiedRequester:
                 return (status, None, None)
             elif status == 500 or status == 502 or status == 503:
                 # Twitter temporaly unavailable, try again
-                pass 
+                pass
             else:
                 # Something went wrong. Try a new proxy!
                 cp = self._get_next_proxy(cp)
                 tried_proxies = tried_proxies + 1
-                
-            
+
         # Save proxies
         self._save_proxies()
-        
+
         # No valid proxies to send the request
-        # Check if we can wait, or we should abort        
+        # Check if we can wait, or we should abort
         rtimes = [p.rtime for p in self.proxies if p.rtime is not None]
         if len(rtimes) == 0:
             return (999, None, None)

@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class Functions {
 	public static int graphLastVersion(final String path, final String prefix) {
@@ -62,7 +63,7 @@ public class Functions {
 		}
 	}
 	
-	public static <V> HashSet<V> HashSetIntersection(HashSet<V> a, HashSet<V> b) {
+	public static <V> HashSet<V> SetIntersection(Set<V> a, Set<V> b) {
 		HashSet<V> r = new HashSet<V>();
 		for( V va : a )	{ if ( b.contains(va) ) r.add(va); }
 		return r;

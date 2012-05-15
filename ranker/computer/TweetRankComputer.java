@@ -160,32 +160,16 @@ public class TweetRankComputer {
 
 
 		logger.debug("min=" + min.toString() + ", max=" + max.toString() + ", maxRange=" + MaxRange.toString());
-		//logger.debug("min=" + min.toString() + ", max=" + max.toString() + ", minRange=" + MinRange.toString() + ", maxRange=" + MaxRange.toString());
 
 		// Normalize the counters
 		TreeMap<Long,Double> norm = new TreeMap<Long,Double>();
 
 		for(Entry<Long,Long> entry : merge.entrySet()) {
-			Double val = MaxRange * val/max;
-			logger.debug("id="+entry.getKey()+", oval=" + entry.getValue() + ", nval=" + val);
-			norm.put(entry.getKey(),  val);
+		    Double val = MaxRange * entry.getValue()/(double)max;
+		    logger.debug("id="+entry.getKey()+", oval=" + entry.getValue() + ", nval=" + val);
+		    norm.put(entry.getKey(),  val);
 		}
-		/*
-		// Check if max and min are equal
-		if ( !max.equals(min) ) {
-			for(Entry<Long,Long> entry : merge.entrySet()) {
-				Double val = MinRange + (MaxRange - MinRange)*(entry.getValue() - min)/(double)(max - min);
-				logger.debug("id="+entry.getKey()+", oval=" + entry.getValue() + ", nval=" + val);
-				norm.put(entry.getKey(),  val);
-			}			
-		} else {
-			for(Entry<Long,Long> entry : merge.entrySet()) {
-				Double val = MinRange + (MaxRange - MinRange)/2.0;
-				logger.debug("id="+entry.getKey()+", oval=" + entry.getValue() + ", nval=" + val);
-				norm.put(entry.getKey(), val);
-			}
-		}
-		*/
+
 		return norm;
 	}
 

@@ -26,7 +26,8 @@ class UsersFrontier:
 
                 l= l.split()
                 if int(l[0]) not in self.users_in_frontier:
-                    self.frontier.append( (int(l[2]), int(l[1]), int(l[0])) ) # Next_Query_Time, Last_Tweet_ID, UserID
+                    # Next_Query_Time, Depth, Last_Tweet_ID, UserID
+                    self.frontier.append( (int(l[3]), int(l[2]), int(l[1]), int(l[0])) )
                     self.users_in_frontier.add( int(l[0]) )
             heapify(self.frontier)
             self.size = len(self.frontier)
@@ -38,9 +39,9 @@ class UsersFrontier:
         try:
             tmp_fname = generate_tmp_fname(self.frontierfile)
             f = open(tmp_fname, 'w')
-            f.write('# UserID\tLastTweetID\tNextQuery\n')
+            f.write('# UserID\tLastTweetID\tDepth\tNextQuery\n')
             for u in self.frontier:
-                f.write("%d\t%d\t%d\n" % (u[2], u[1], u[0]))
+                f.write("%d\t%d\t%d\t%d\n" % (u[3], u[2], u[1], u[0]))
             f.close()
             safemv(tmp_fname, self.frontierfile)
         finally:
@@ -61,11 +62,11 @@ class UsersFrontier:
         self.lock.release()
         return size
 
-    def push(self, user, tweet, time):
+    def push(self, user, tweet, time, depth):
         self.lock.acquire()
         try:
             if not user in self.users_in_frontier: # safety
-                heappush(self.frontier, (time, tweet, user))
+                heappush(self.frontier, (time, depth, tweet, user))
                 self.users_in_frontier.add( user )
                 self.ops = self.ops + 1
                 self.size = self.size + 1
@@ -78,7 +79,7 @@ class UsersFrontier:
         elem = None
         try:
             elem = heappop(self.frontier)
-            self.users_in_frontier.remove(elem[2])
+            self.users_in_frontier.remove(elem[3])
         finally:
             self.lock.release()
         return elem

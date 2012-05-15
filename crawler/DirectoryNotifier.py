@@ -20,7 +20,7 @@ def main(argv):
     # Logger configuration
     logging.basicConfig(format='[%(levelname)s] %(asctime)s %(module)s:%(funcName)s:%(lineno)d -> %(message)s')
     logger = logging.getLogger('DirectoryNotifier')
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
     # Create Services Notifier (Ranker & Solr notifier)
     notif = ServicesNotifier(logger)
@@ -35,42 +35,30 @@ def main(argv):
 
     # Prepare data to process
     data_dir = argv[1]
-    tweets_dir = data_dir + '/tweets/'
-    users_dir  = data_dir + '/users/'
 
-    fulist = listdir(users_dir)
-    ftlist = listdir(tweets_dir)
-
-    fulist.sort()
-    ftlist.sort()
+    files = listdir(data_dir)
 
     # Process users data
-    for fname in fulist:
+    for fname in files:
         user_id = int(fname.split('.')[0])
         ftype   = fname.split('.')[1]
-        fname = users_dir + fname
         if fname in ignored: continue
+        fname = data_dir + fname
 
-        logger.info('User file: %s' % fname)
         if ftype == 'friends':
+            logger.info('Friends file: %s' % fname)
             f = open(fname, 'r')
             friends = []
-            for l in f:
-                friends.append(int(l))
+            for l in f: friends.append(int(l))
             notif.notify_user_friends(user_id, friends)
             f.close()
+        elif ftype == 'tweets':
+            logger.info('Tweets file: %s' % fname)
+            parser = make_parser()
+            parser.setContentHandler(TweetArrayParser(lambda tw: notif.notify_tweet(tw)))
+            parser.parse(fname)
         else:
             pass # TODO: Add hashtags used by the user
-
-    # Process tweet data
-    for fname in ftlist:
-        fname = tweets_dir + fname
-        if fname in ignored: continue
-
-        logger.info('Tweets file: %s' % fname)
-        parser = make_parser()
-        parser.setContentHandler(TweetArrayParser(lambda tw: notif.notify_tweet(tw)))
-        parser.parse(fname)
 
     return 0
 

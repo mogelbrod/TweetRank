@@ -57,9 +57,9 @@ class TweetArrayParser(ContentHandler):
                                     date[3], date[4], date[5], 0, pytz.utc)
             self.stack[-1].date = date
         elif name == 'name':
-            self.stack[-1].nick = EscapeXMLIllegalCharEntities(self.pcharacters)
-        elif name == 'screen_name':
             self.stack[-1].name = EscapeXMLIllegalCharEntities(self.pcharacters)
+        elif name == 'screen_name':
+            self.stack[-1].nick = EscapeXMLIllegalCharEntities(self.pcharacters)
         elif name == 'followers_count':
             self.stack[-1].followers_count = int(self.pcharacters)
         elif name == 'friends_count':

@@ -33,7 +33,7 @@ FM_{i,j} = \begin{cases}
 \begin{equation}\label{eq:mentions_probability}
 M_{i,j} = \frac{FM_{i, u_j}}{ |t \in T : u_t = u_j|}
 \end{equation}
-Note that $|t \in T : u_t = u_j|$ is just the number of tweets from user $u_j$. This means that the user visits a random user profile mentioned by a tweet, and then visist a random tweet of that user.
+Note that $|t \in T : u_t = u_j|$ is just the number of tweets from user $u_j$.
 
 \subsubsection*{$F_{i,j}$ approximation}
 In the first place, probability of visiting the profile of user $j$ accessing the following list of user $i$ is defined as $FF_{i,j}$. Notice that $f_i$ is the number of users followed by user $i$. Using this probability, $F_{i,j}$ is defined in \ref{eq:follows_probability}.
@@ -47,7 +47,7 @@ FF_{i,j} = \begin{cases}
 \begin{equation}\label{eq:follows_probability}
 F_{i,j} = \frac{FF_{u_i, u_j}}{ |t \in T : u_t = u_j|}
 \end{equation}
-Note that $|t \in T : u_t = u_j|$ is just the number of tweets of user $u_j$. This means that the user visited a random user profile followed by the owner of a tweet, and the visited a random tweet of that user. 
+Note that $|t \in T : u_t = u_j|$ is just the number of tweets of user $u_j$.
 
 \subsubsection*{$H_{i,j}$ approximation}
 First, let's define the probability that a tweet $j$ is visited from tweet $i$, using the hashtag $k$. Remember that $ht_k$ denotes the number of tweets that use the hashtag $k$ and $th_i$ denotes the number of hashtags that are included in tweet $i$.

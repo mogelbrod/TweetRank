@@ -5,11 +5,12 @@ from RankerNotifier import RankerNotifier
 from SolrNotifier import SolrNotifier
 
 class ServicesNotifier:
-    def __init__(self, logger = None, max_pending = 1000):
+    def __init__(self, logger = None, max_pending = 2000):
         self.pending = []
+        self.logger = logger
         self.max_pending = max_pending
-        self.snotif = SolrNotifier(logger=logger)
-        self.rnotif = RankerNotifier(logger=logger)
+        self.snotif = SolrNotifier(logger=logger, host='176.9.149.66')
+        self.rnotif = RankerNotifier(logger=logger, host='localhost')
 
     def __del__(self):
         if len(self.pending) > 0:
@@ -30,9 +31,11 @@ class ServicesNotifier:
         self.rnotif.add_user_friends(user_id, friends)
 
     def notify_user_hashtags(self, user_id, hashtags):
-        self.rnotif.add_user_hashtags(user_id, hashtags)
+        #self.rnotif.add_user_hashtags(user_id, hashtags)
+        pass
 
     def flush(self):
-        self.snotif.notify_tweets(self.pending)
+        if self.logger is not None: self.logger.debug('Flushing data...')
         self.rnotif.notify_tweets(self.pending)
+        self.snotif.notify_tweets(self.pending)
         self.pending = []
